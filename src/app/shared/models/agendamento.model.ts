@@ -1,3 +1,4 @@
+// src/app/shared/models/agendamento.model.ts
 export enum StatusAgendamento {
   AGENDADO = 'AGENDADO',
   EM_ANDAMENTO = 'EM_ANDAMENTO',
@@ -26,4 +27,20 @@ export interface AgendamentoRequest {
   horario: string;
   observacoes?: string;
   status?: StatusAgendamento;
+}
+
+// ✅ Interface para exibição de agendamentos por mecânico
+export interface AgendamentoMecanico {
+  nome: string;
+  especialidade: string;
+  agendamentos: AgendamentoItem[];
+}
+
+// ✅ Interface para itens individuais de agendamento
+export interface AgendamentoItem {
+  hora: string;
+  os: string;
+  cliente: string;
+  dataCadastro: string;
+  mecanico: string;
 }

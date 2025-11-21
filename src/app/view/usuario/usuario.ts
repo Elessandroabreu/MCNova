@@ -9,7 +9,7 @@ import { Tabela } from '../../componentes/tabela/tabela';
 import { ModalUsuario } from '../../componentes/modal-usuario/modal-usuario';
 import { Loading } from '../../componentes/loading/loading';
 import { UsuarioService } from '../../shared/services/usuario.service';
-import { Usuario, UsuarioRequest, UserRole } from '../../shared/models/usuario.model';
+import { Usuario as UsuarioModel, UsuarioRequest, UserRole } from '../../shared/models/usuario.model';
 
 @Component({
   selector: 'app-usuario',
@@ -18,12 +18,12 @@ import { Usuario, UsuarioRequest, UserRole } from '../../shared/models/usuario.m
   templateUrl: './usuario.html',
   styleUrl: './usuario.scss',
 })
-export class UsuarioComponent implements OnInit {  // ⬅️ MUDOU AQUI
+export class Usuario implements OnInit {  // ✅ MANTIDO NOME CONSISTENTE
   @ViewChild(ModalUsuario) modalUsuario!: ModalUsuario;
 
-  protected usuarios: Usuario[] = [];  // Agora funciona!
-  protected usuariosFiltrados: Usuario[] = [];
-  protected usuarioSelecionado?: Usuario;
+  protected usuarios: UsuarioModel[] = [];
+  protected usuariosFiltrados: UsuarioModel[] = [];
+  protected usuarioSelecionado?: UsuarioModel;
   protected loading: boolean = false;
 
   protected listFiltro: OptionDropdown[] = [
@@ -111,7 +111,7 @@ export class UsuarioComponent implements OnInit {  // ⬅️ MUDOU AQUI
     setTimeout(() => this.modalUsuario.abrir(), 100);
   }
 
-  abrirModalEditar(usuario: Usuario): void {
+  abrirModalEditar(usuario: UsuarioModel): void {
     this.usuarioSelecionado = usuario;
     setTimeout(() => this.modalUsuario.abrir(), 100);
   }
@@ -148,7 +148,7 @@ export class UsuarioComponent implements OnInit {  // ⬅️ MUDOU AQUI
     }
   }
 
-  deletarUsuario(usuario: Usuario): void {
+  deletarUsuario(usuario: UsuarioModel): void {
     if (!confirm(`Deseja realmente deletar o usuário ${usuario.nmUsuario}?`)) {
       return;
     }

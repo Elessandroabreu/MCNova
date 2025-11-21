@@ -1,39 +1,46 @@
+<!-- src/app/view/estoque/estoque.html -->
 <main class="container-xxl pt-5 pb-5">
+  <app-loading [show]="loading" message="Carregando produtos..." />
+
   <div class="row justify-content-between align-items-center p-0">
-    <div class="col-3">
+    <div class="col-6">
       <app-titulo title="Estoque" subtitle="Gerencie o estoque de produtos e peças" />
     </div>
 
-    <div class="col-6 d-flex justify-content-end">
-      <button class="btn btn-secondary"><i class="bi bi-arrow-up-circle"></i> Movimentações</button>
-      <button class="btn btn-secondary">
-        <i class="bi bi-arrow-down-circle"></i> Novas Movimentações
+    <div class="col-6 d-flex justify-content-end gap-2">
+      <button class="btn btn-primary-mecanica" (click)="abrirModalNovo()">
+        <i class="bi bi-plus-lg"></i> Novo Produto
       </button>
-      <button class="btn btn-primary-mecanica"><i class="bi bi-plus-lg"></i> Novo Produto</button>
     </div>
   </div>
 
   <div class="row mt-5 row-gap-3">
-    <div class="col-sm-12 col-md-8 col-lg-4">
-      <app-card title="Total de Produtos" num="5"><i class="bi bi-box-seam"></i></app-card>
+    <div class="col-sm-12 col-md-6 col-lg-3">
+      <app-card [title]="'Total de Produtos'" [num]="totalProdutos.toString()">
+        <i class="bi bi-box-seam"></i>
+      </app-card>
     </div>
-    <div class="col-sm-12 col-md-8 col-lg-4">
-      <app-card title="Total de Itens" num="250"><i class="bi bi-box-seam"></i></app-card>
+    <div class="col-sm-12 col-md-6 col-lg-3">
+      <app-card [title]="'Total de Itens'" [num]="totalItens.toString()">
+        <i class="bi bi-boxes"></i>
+      </app-card>
     </div>
-    <div class="col-sm-12 col-md-8 col-lg-4">
-      <app-card title="Valor em estoque" num="R$ 1500.00"><i class="bi bi-box-seam"></i></app-card>
+    <div class="col-sm-12 col-md-6 col-lg-3">
+      <app-card [title]="'Valor em Estoque'" [num]="'R$ ' + valorEstoque.toFixed(2)">
+        <i class="bi bi-currency-dollar"></i>
+      </app-card>
     </div>
-    <div class="col-sm-12 col-md-8 col-lg-4">
-      <app-card title="Estoques baixos" num="0"
-        ><i class="bi bi-exclamation-triangle"></i
-      ></app-card>
+    <div class="col-sm-12 col-md-6 col-lg-3">
+      <app-card [title]="'Estoques Baixos'" [num]="estoqueBaixo.toString()">
+        <i class="bi bi-exclamation-triangle"></i>
+      </app-card>
     </div>
   </div>
 
   <div class="row">
     <app-pesquisa-filtro
       [listFiltro]="listaCategorias"
-      label="Buscar por nome, código ou fornecedor..."
+      label="Buscar por nome, código ou categoria..."
       (pesquisa)="getPesquisa($event)"
       (receberFiltro)="getFiltro($event)"
     />
@@ -41,37 +48,49 @@
 
   <div class="row mt-5 border border-body p-3 rounded-4">
     <h5>Produtos em Estoque</h5>
-    <div class="row pt-5">
+    <div class="row pt-3">
+      @if (produtosFiltrados.length === 0) {
+      <div class="col-12 text-center py-5">
+        <i class="bi bi-inbox fs-1 text-muted"></i>
+        <p class="text-muted mt-3">Nenhum produto encontrado</p>
+      </div>
+      } @else {
       <app-tabela [cabecario]="listaCabecario">
-        @for (item of listaBody; track $index) {
+        @for (produto of produtosFiltrados; track produto.cdProduto) {
         <tr>
-          <td>{{ item.codigo }}</td>
-          <td>{{ item.descricao }}</td>
-          <td>{{ item.categoria }}</td>
-          <td>{{ item.quantidade }}</td>
-          <td>{{ item.estoqueMinimo }}</td>
-          <td>{{ item.precoUnitario }}</td>
-          <td>{{ item.precoTotal }}</td>
+          <td>#{{ produto.cdProduto }}</td>
+          <td>{{ produto.nmProduto }}</td>
+          <td>{{ produto.categoria || '-' }}</td>
+          <td>{{ produto.qtdEstoque }}</td>
+          <td>{{ produto.qtdMinimo }}</td>
+          <td>R$ {{ produto.vlVenda.toFixed(2) }}</td>
+          <td>R$ {{ calcularValorTotal(produto).toFixed(2) }}</td>
           <td>
             <span
               class="badge"
-              [ngClass]="{
-                'bg-success': item.status === 'normal',
-                'bg-danger': item.status === 'crítico',
-                'bg-primary': item.status === 'baixo'
-              }"
+              [ngClass]="getStatusEstoque(produto).classe"
             >
-              {{ item.status }}
+              {{ getStatusEstoque(produto).texto }}
             </span>
           </td>
           <td>
-            <button class="btn btn-secondary"><i class="bi bi-eye"></i></button>
-            <button class="btn btn-secondary"><i class="bi bi-pencil-square"></i></button>
+            <button class="btn" (click)="abrirModalEditar(produto)">
+              <i class="bi bi-pencil-square"></i>
+            </button>
+            <button class="btn text-danger" (click)="deletarProduto(produto)">
+              <i class="bi bi-trash"></i>
+            </button>
           </td>
         </tr>
-
         }
       </app-tabela>
+      }
     </div>
   </div>
+
+  <app-modal-produto
+    [produto]="produtoSelecionado"
+    (salvar)="salvarProduto($event)"
+    (fechar)="produtoSelecionado = undefined"
+  />
 </main>

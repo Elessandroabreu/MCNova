@@ -8,7 +8,7 @@ import { Agenda } from './view/agenda/agenda';
 import { Clientes } from './view/clientes/clientes';
 import { Estoque } from './view/estoque/estoque';
 import { Orcamento } from './view/orcamento/orcamento';
-import { UsuarioComponent } from './view/usuario/usuario';  // ⬅️ MUDOU AQUI
+import { Usuario } from './view/usuario/usuario';  // ✅ CORRIGIDO
 import { Mecanico } from './view/mecanico/mecanico';
 import { Faturamento } from './view/faturamento/faturamento';
 import { Veiculos } from './view/veiculos/veiculos';
@@ -68,7 +68,7 @@ export const routes: Routes = [
   },
   { 
     path: 'usuario', 
-    component: UsuarioComponent,  // ⬅️ MUDOU AQUI
+    component: Usuario,  // ✅ CORRIGIDO
     canActivate: [authGuard, roleGuard(['ROLE_ADMIN'])]
   },
   { 

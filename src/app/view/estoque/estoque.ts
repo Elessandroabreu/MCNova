@@ -31,6 +31,7 @@ export class Estoque implements OnInit {
   ];
 
   protected listaCabecario: string[] = [
+    'Código',
     'Produto',
     'Categoria',
     'Quantidade',
@@ -84,6 +85,14 @@ export class Estoque implements OnInit {
       new OptionDropdown('Todas as categorias'),
       ...categorias.map((c) => new OptionDropdown(c!)),
     ];
+  }
+
+  getPesquisa(termo: string): void {
+    this.filtrarPorTexto(termo);
+  }
+
+  getFiltro(categoria: string): void {
+    this.filtrarPorCategoria(categoria);
   }
 
   filtrarPorTexto(termo: string): void {
@@ -151,6 +160,25 @@ export class Estoque implements OnInit {
     }
   }
 
+  deletarProduto(produto: Produto): void {
+    if (!confirm(`Deseja realmente deletar o produto ${produto.nmProduto}?`)) {
+      return;
+    }
+
+    this.loading = true;
+    this.produtoService.deletar(produto.cdProduto).subscribe({
+      next: () => {
+        alert('Produto deletado com sucesso!');
+        this.carregarProdutos();
+      },
+      error: (erro) => {
+        console.error('Erro ao deletar produto:', erro);
+        alert('Erro ao deletar produto. Tente novamente.');
+        this.loading = false;
+      },
+    });
+  }
+
   getStatusEstoque(produto: Produto): { texto: string; classe: string } {
     if (produto.qtdEstoque === 0) {
       return { texto: 'Zerado', classe: 'bg-danger' };
@@ -159,5 +187,9 @@ export class Estoque implements OnInit {
       return { texto: 'Baixo', classe: 'bg-warning' };
     }
     return { texto: 'Normal', classe: 'bg-success' };
+  }
+
+  calcularValorTotal(produto: Produto): number {
+    return produto.vlVenda * produto.qtdEstoque;
   }
 }
