@@ -1,3 +1,4 @@
+// src/app/app.routes.ts
 import { Routes } from '@angular/router';
 import { Dashboard } from './view/dashboard/dashboard';
 import { Login } from './view/login/login';
@@ -7,9 +8,12 @@ import { Agenda } from './view/agenda/agenda';
 import { Clientes } from './view/clientes/clientes';
 import { Estoque } from './view/estoque/estoque';
 import { Orcamento } from './view/orcamento/orcamento';
-import { Usuario } from './view/usuario/usuario';
+import { UsuarioComponent } from './view/usuario/usuario';  // ⬅️ MUDOU AQUI
 import { Mecanico } from './view/mecanico/mecanico';
 import { Faturamento } from './view/faturamento/faturamento';
+import { Veiculos } from './view/veiculos/veiculos';
+import { Servicos } from './view/servicos/servicos';
+import { Vendas } from './view/vendas/vendas';
 import { AuthCallback } from './view/auth-callback/auth-callback..component';
 import { authGuard } from './shared/guards/auth.guard';
 import { roleGuard } from './shared/guards/role.guard';
@@ -38,8 +42,23 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard(['ROLE_ADMIN', 'ROLE_ATENDENTE'])]
   },
   { 
+    path: 'veiculos', 
+    component: Veiculos,
+    canActivate: [authGuard, roleGuard(['ROLE_ADMIN', 'ROLE_ATENDENTE'])]
+  },
+  { 
     path: 'estoque', 
     component: Estoque,
+    canActivate: [authGuard, roleGuard(['ROLE_ADMIN', 'ROLE_ATENDENTE'])]
+  },
+  { 
+    path: 'servicos', 
+    component: Servicos,
+    canActivate: [authGuard, roleGuard(['ROLE_ADMIN', 'ROLE_ATENDENTE'])]
+  },
+  { 
+    path: 'vendas', 
+    component: Vendas,
     canActivate: [authGuard, roleGuard(['ROLE_ADMIN', 'ROLE_ATENDENTE'])]
   },
   { 
@@ -49,7 +68,7 @@ export const routes: Routes = [
   },
   { 
     path: 'usuario', 
-    component: Usuario,
+    component: UsuarioComponent,  // ⬅️ MUDOU AQUI
     canActivate: [authGuard, roleGuard(['ROLE_ADMIN'])]
   },
   { 

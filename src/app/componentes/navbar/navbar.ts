@@ -2,7 +2,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { OptionDropdown } from '../../shared/models/option-dropdown';
 import { RouterLinkActive, RouterLink } from '@angular/router';
 import { BarraLateral } from '../barra-lateral/barra-lateral';
-import { ThemeService } from '../../service/theme.service';
+import { ThemeService } from '../../shared/services/theme.service';
 import { DropdownLink } from '../dropdown-link/dropdown-link';
 import { AuthService } from '../../shared/services/auth.service';
 import { CommonModule } from '@angular/common';

@@ -18,10 +18,10 @@ import { Usuario, UsuarioRequest, UserRole } from '../../shared/models/usuario.m
   templateUrl: './usuario.html',
   styleUrl: './usuario.scss',
 })
-export class Usuario implements OnInit {
+export class UsuarioComponent implements OnInit {  // ⬅️ MUDOU AQUI
   @ViewChild(ModalUsuario) modalUsuario!: ModalUsuario;
 
-  protected usuarios: Usuario[] = [];
+  protected usuarios: Usuario[] = [];  // Agora funciona!
   protected usuariosFiltrados: Usuario[] = [];
   protected usuarioSelecionado?: Usuario;
   protected loading: boolean = false;
@@ -35,7 +35,6 @@ export class Usuario implements OnInit {
 
   protected listaCabecario: string[] = ['Nome', 'Email', 'Telefone', 'CPF', 'Função', 'Ações'];
 
-  // Contadores
   protected totalUsuarios: number = 0;
   protected totalAdmins: number = 0;
   protected totalAtendentes: number = 0;
@@ -121,7 +120,6 @@ export class Usuario implements OnInit {
     this.loading = true;
 
     if (this.usuarioSelecionado) {
-      // Editar
       this.usuarioService.atualizar(this.usuarioSelecionado.cdUsuario, usuarioData).subscribe({
         next: () => {
           alert('Usuário atualizado com sucesso!');
@@ -135,7 +133,6 @@ export class Usuario implements OnInit {
         },
       });
     } else {
-      // Criar novo
       this.usuarioService.criar(usuarioData).subscribe({
         next: () => {
           alert('Usuário cadastrado com sucesso!');

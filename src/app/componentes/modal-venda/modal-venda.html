@@ -1,0 +1,193 @@
+<!-- src/app/componentes/modal-venda/modal-venda.html -->
+<div
+  class="modal fade"
+  id="modalVenda"
+  tabindex="-1"
+  aria-labelledby="modalVendaLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header bg-primary-mecanica text-white">
+        <h5 class="modal-title" id="modalVendaLabel">Nova Venda</h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          (click)="fecharModal()"
+          aria-label="Close"
+        ></button>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <div class="modal-body">
+          <div class="row g-3">
+            <!-- Cliente -->
+            <div class="col-md-6">
+              <label for="cdCliente" class="form-label fw-semibold"
+                >Cliente <span class="text-danger">*</span></label
+              >
+              <select
+                class="form-select"
+                id="cdCliente"
+                formControlName="cdCliente"
+                [class.is-invalid]="isInvalid('cdCliente')"
+              >
+                <option value="">Selecione um cliente</option>
+                @for (cliente of clientes; track cliente.cdCliente) {
+                <option [value]="cliente.cdCliente">{{ cliente.nmCliente }}</option>
+                }
+              </select>
+              @if (isInvalid('cdCliente')) {
+              <div class="invalid-feedback">Cliente é obrigatório</div>
+              }
+            </div>
+
+            <!-- Forma de Pagamento -->
+            <div class="col-md-6">
+              <label for="formaPagamento" class="form-label fw-semibold"
+                >Forma de Pagamento <span class="text-danger">*</span></label
+              >
+              <select
+                class="form-select"
+                id="formaPagamento"
+                formControlName="formaPagamento"
+                [class.is-invalid]="isInvalid('formaPagamento')"
+              >
+                <option value="">Selecione</option>
+                <option value="DINHEIRO">Dinheiro</option>
+                <option value="CARTAO_CREDITO">Cartão de Crédito</option>
+                <option value="CARTAO_DEBITO">Cartão de Débito</option>
+                <option value="PIX">PIX</option>
+              </select>
+              @if (isInvalid('formaPagamento')) {
+              <div class="invalid-feedback">Forma de pagamento é obrigatória</div>
+              }
+            </div>
+          </div>
+
+          <!-- Produtos -->
+          <div class="row mt-4">
+            <div class="col-12">
+              <h6 class="fw-semibold">Produtos <span class="text-danger">*</span></h6>
+            </div>
+
+            <!-- Adicionar Produto -->
+            <div class="col-12 border rounded p-3 bg-light">
+              <div class="row g-2 align-items-end">
+                <div class="col-md-6">
+                  <label for="produtoSelect" class="form-label">Produto</label>
+                  <select
+                    class="form-select"
+                    id="produtoSelect"
+                    [(ngModel)]="produtoSelecionado"
+                    [ngModelOptions]="{ standalone: true }"
+                  >
+                    <option value="">Selecione um produto</option>
+                    @for (produto of produtos; track produto.cdProduto) {
+                    <option [value]="produto.cdProduto">
+                      {{ produto.nmProduto }} - R$ {{ produto.vlVenda }} (Estoque: {{ produto.qtdEstoque }})
+                    </option>
+                    }
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label for="quantidadeInput" class="form-label">Quantidade</label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="quantidadeInput"
+                    [(ngModel)]="quantidadeSelecionada"
+                    [ngModelOptions]="{ standalone: true }"
+                    min="1"
+                  />
+                </div>
+                <div class="col-md-2">
+                  <button
+                    type="button"
+                    class="btn btn-primary-mecanica w-100"
+                    (click)="adicionarProduto()"
+                  >
+                    <i class="bi bi-plus-lg"></i> Adicionar
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Lista de Produtos Adicionados -->
+            <div class="col-12 mt-3">
+              @if (itensVenda.length === 0) {
+              <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle"></i>
+                Nenhum produto adicionado
+              </div>
+              } @else {
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Produto</th>
+                    <th>Quantidade</th>
+                    <th>Valor Unit.</th>
+                    <th>Subtotal</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of itensVenda; track $index) {
+                  <tr>
+                    <td>{{ getProdutoNome(item.cdProduto) }}</td>
+                    <td>{{ item.quantidade }}</td>
+                    <td>R$ {{ getProdutoValor(item.cdProduto) }}</td>
+                    <td>R$ {{ getSubtotal(item.cdProduto, item.quantidade) }}</td>
+                    <td>
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-danger"
+                        (click)="removerProduto($index)"
+                      >
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                  }
+                </tbody>
+              </table>
+              }
+            </div>
+          </div>
+
+          <!-- Desconto e Total -->
+          <div class="row mt-3">
+            <div class="col-md-6">
+              <label for="desconto" class="form-label fw-semibold">Desconto (R$)</label>
+              <input
+                type="number"
+                class="form-control"
+                id="desconto"
+                formControlName="desconto"
+                step="0.01"
+                min="0"
+                [max]="calcularTotal()"
+              />
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
+              <div class="w-100">
+                <h5 class="text-end mb-0">
+                  Total: <span class="text-primary-mecanica">R$ {{ calcularTotalComDesconto() }}</span>
+                </h5>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="fecharModal()">
+            Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary-mecanica" [disabled]="itensVenda.length === 0">
+            <i class="bi bi-cart-check"></i> Finalizar Venda
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
