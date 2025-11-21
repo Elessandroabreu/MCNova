@@ -34,38 +34,33 @@
         </div>
 
         <div class="mb-3">
-          <label for="senha" class="form-label fw-semibold">Senha</label>
+          <label for="password" class="form-label fw-semibold">Senha</label>
           <input
             type="password"
             class="form-control"
-            formControlName="senha"
-            id="senha"
-            [class.is-invalid]="isInvalid('senha')"
+            formControlName="password"
+            id="password"
+            [class.is-invalid]="isInvalid('password')"
           />
-          @if (isInvalid('senha')) {
+          @if (isInvalid('password')) {
           <div class="invalid-feedback">
             <span> Digite uma senha de no mínimo 3 caracteres </span>
           </div>
           }
         </div>
 
-        <button 
-          type="submit" 
-          class="btn btn-primary-mecanica w-100"
-          [disabled]="loading"
-        >
+        <button type="submit" class="btn btn-primary-mecanica w-100" [disabled]="loading">
           @if (loading) {
-            <span class="spinner-border spinner-border-sm me-2"></span>
-          }
-          ENTRAR
+          <span class="spinner-border spinner-border-sm me-2"></span>
+          } ENTRAR
         </button>
 
         <hr class="border border-primary-mecanica opacity-100 border-1 mt-4" />
-        
+
         <p class="text-center text-muted">OU CONTINUE COM</p>
-        
-        <button 
-          type="button" 
+
+        <button
+          type="button"
           class="btn btn-outline-primary-mecanica w-100"
           (click)="loginWithGoogle()"
         >
