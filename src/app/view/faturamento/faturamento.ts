@@ -1,24 +1,24 @@
+// src/app/view/faturamento/faturamento.ts
 import { Component, OnInit } from '@angular/core';
 import { Titulo } from '../../componentes/titulo/titulo';
 import { DropdownBotao } from '../../componentes/dropdown-botao/dropdown-botao';
 import { OptionDropdown } from '../../shared/models/option-dropdown';
 import { Card } from '../../componentes/card/card';
-import { CardFinanceiro } from '../../componentes/card-financeiro/card-financeiro';
 import { Tabela } from '../../componentes/tabela/tabela';
 import { CommonModule } from '@angular/common';
 import { FaturamentoService } from '../../shared/services/faturamento.service';
-import { Faturamento } from '../../shared/models/venda.model';
+import { Faturamento as FaturamentoModel } from '../../shared/models/venda.model';
 import { Loading } from '../../componentes/loading/loading';
 
 @Component({
   selector: 'app-faturamento',
-  imports: [Titulo, DropdownBotao, Card, CardFinanceiro, Tabela, CommonModule, Loading],
+  imports: [Titulo, DropdownBotao, Card, Tabela, CommonModule, Loading],
   templateUrl: './faturamento.html',
   styleUrl: './faturamento.scss',
 })
-export class Faturamento implements OnInit {
+export class FaturamentoView implements OnInit {
   protected loading: boolean = false;
-  protected faturamentos: Faturamento[] = [];
+  protected faturamentos: FaturamentoModel[] = [];
   protected totalFaturado: number = 0;
   protected totalServicos: number = 0;
   protected totalProdutos: number = 0;
@@ -40,13 +40,14 @@ export class Faturamento implements OnInit {
 
   carregarFaturamentoDoDia(): void {
     this.loading = true;
-    this.faturamentoService.listarFaturamentoDoDia().subscribe({
-      next: (faturamentos) => {
+    // ✅ CORRIGIDO: usar listarDoDia e tipar os parâmetros
+    this.faturamentoService.listarDoDia().subscribe({
+      next: (faturamentos: FaturamentoModel[]) => {
         this.faturamentos = faturamentos;
         this.calcularTotais();
         this.loading = false;
       },
-      error: (erro) => {
+      error: (erro: any) => {
         console.error('Erro ao carregar faturamento:', erro);
         this.loading = false;
       },

@@ -1,10 +1,11 @@
+// src/app/shared/services/ordem-servico.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { 
   OrdemServico, 
-  OrdemServicoRequest, 
+  OrdemServicoRequestDTO, // ✅ CORRIGIDO
   StatusOrdemServico 
 } from '../models/ordem-servico.model';
 
@@ -15,7 +16,7 @@ export class OrdemServicoService {
   private http = inject(HttpClient);
   private readonly API_URL = `${environment.apiUrl}/ordens-servico`;
 
-  criar(ordem: OrdemServicoRequest): Observable<OrdemServico> {
+  criar(ordem: OrdemServicoRequestDTO): Observable<OrdemServico> { // ✅ CORRIGIDO
     return this.http.post<OrdemServico>(this.API_URL, ordem);
   }
 

@@ -1,15 +1,15 @@
+// src/app/view/dashboard/dashboard.ts
 import { Component, OnInit } from '@angular/core';
 import { Card } from '../../componentes/card/card';
 import { BotaoGrande } from '../../componentes/botao-grande/botao-grande';
 import { Titulo } from '../../componentes/titulo/titulo';
-import { RouterLink } from '@angular/router';
 import { OrdemServicoService } from '../../shared/services/ordem-servico.service';
 import { FaturamentoService } from '../../shared/services/faturamento.service';
 import { StatusOrdemServico } from '../../shared/models/ordem-servico.model';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [Card, BotaoGrande, Titulo, RouterLink],
+  imports: [Card, BotaoGrande, Titulo],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })
@@ -41,9 +41,10 @@ export class Dashboard implements OnInit {
       },
     });
 
-    this.faturamentoService.calcularTotalDoDia().subscribe({
-      next: (total) => {
-        this.faturamentoDia = total;
+    // ✅ CORRIGIDO: usar calcularTotalDia e tipar o retorno
+    this.faturamentoService.calcularTotalDia().subscribe({
+      next: (resultado: { totalDia: number }) => {
+        this.faturamentoDia = resultado.totalDia;
       },
     });
   }

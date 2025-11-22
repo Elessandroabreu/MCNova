@@ -8,9 +8,9 @@ import { Agenda } from './view/agenda/agenda';
 import { Clientes } from './view/clientes/clientes';
 import { Estoque } from './view/estoque/estoque';
 import { Orcamento } from './view/orcamento/orcamento';
-import { Usuario } from './view/usuario/usuario';  // ✅ CORRIGIDO
+import { Usuario } from './view/usuario/usuario';
 import { Mecanico } from './view/mecanico/mecanico';
-import { Faturamento } from './view/faturamento/faturamento';
+import { FaturamentoView } from './view/faturamento/faturamento'; // ✅ ATUALIZADO
 import { Veiculos } from './view/veiculos/veiculos';
 import { Servicos } from './view/servicos/servicos';
 import { Vendas } from './view/vendas/vendas';
@@ -68,7 +68,7 @@ export const routes: Routes = [
   },
   { 
     path: 'usuario', 
-    component: Usuario,  // ✅ CORRIGIDO
+    component: Usuario,
     canActivate: [authGuard, roleGuard(['ROLE_ADMIN'])]
   },
   { 
@@ -78,7 +78,7 @@ export const routes: Routes = [
   },
   { 
     path: 'faturamento', 
-    component: Faturamento,
+    component: FaturamentoView, // ✅ ATUALIZADO
     canActivate: [authGuard, roleGuard(['ROLE_ADMIN', 'ROLE_ATENDENTE'])]
   },
   { path: '**', component: NotFound },

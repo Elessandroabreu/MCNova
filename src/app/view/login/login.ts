@@ -1,12 +1,12 @@
 // src/app/view/login/login.ts
 import { Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../shared/services/auth.service';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule], // ✅ RouterLink removido
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })
