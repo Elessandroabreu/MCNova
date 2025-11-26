@@ -1,220 +1,189 @@
-import { Component, inject, OnInit, signal, ViewChild, ElementRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
-import { ProdutoService } from '../../../core/services/produto.service';
-import { Produto, ProdutoRequest } from '../../../core/models';
-import { formatarData } from '../../../core/utils/formatters.util';
+// src/app/features/produtos/produtos-lista/produtos-lista.component.ts
 
-declare var bootstrap: any;
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ProdutoService } from '../../../core/services/produto.service';
+import { Produto, ProdutoRequest } from '../../../core/models/produto.model';
 
 @Component({
   selector: 'app-produtos-lista',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './produtos-lista.component.html',
-  styleUrl: './produtos-lista.component.scss'
+  styleUrls: ['./produtos-lista.component.scss']
 })
 export class ProdutosListaComponent implements OnInit {
-  private produtoService = inject(ProdutoService);
-  private fb = inject(FormBuilder);
-  
-  @ViewChild('produtoModal') modalElement!: ElementRef;
-  private modalInstance: any;
-  
-  produtos = signal<Produto[]>([]);
-  produtosFiltrados = signal<Produto[]>([]);
-  
-  isLoading = signal(false);
-  isSubmitting = signal(false);
-  
+  produtos: Produto[] = [];
   produtoForm!: FormGroup;
-  modoEdicao = signal(false);
-  produtoEditando = signal<Produto | null>(null);
-  
-  searchTerm = signal('');
-  filtroEstoque = signal<'todos' | 'estoque-baixo'>('todos');
-  
+  loading = false;
+  erro = '';
+  modoEdicao = false;
+  mostrarModal = false;
+
+  constructor(
+    private produtoService: ProdutoService,
+    private fb: FormBuilder
+  ) {}
+
   ngOnInit(): void {
     this.inicializarForm();
     this.carregarProdutos();
   }
-  
-  ngAfterViewInit(): void {
-    if (this.modalElement) {
-      this.modalInstance = new bootstrap.Modal(this.modalElement.nativeElement);
-    }
-  }
-  
+
   inicializarForm(): void {
     this.produtoForm = this.fb.group({
-      nmProduto: ['', [Validators.required, Validators.maxLength(120)]],
-      dsProduto: ['', [Validators.maxLength(255)]],
-      vlPreco: ['', [Validators.required, Validators.min(0)]],
-      qtEstoque: ['', [Validators.required, Validators.min(0)]],
-      qtEstoqueMinimo: ['', [Validators.min(0)]]
+      cdProduto: [null],
+      nmProduto: ['', [Validators.required, Validators.maxLength(150)]],
+      dsProduto: ['', Validators.maxLength(500)],
+      categoria: ['', Validators.maxLength(100)],
+      vlCusto: [0, [Validators.required, Validators.min(0.01)]],
+      vlVenda: [0, [Validators.required, Validators.min(0.01)]],
+      qtdEstoque: [0, [Validators.required, Validators.min(0)]],
+      qtdMinimo: [5, [Validators.required, Validators.min(0)]]
     });
   }
-  
+
   carregarProdutos(): void {
-    this.isLoading.set(true);
-    
-    this.produtoService.listarAtivos().subscribe({
-      next: (produtos) => {
-        this.produtos.set(produtos);
-        this.aplicarFiltro();
-        this.isLoading.set(false);
+    this.loading = true;
+    this.erro = '';
+
+    this.produtoService.listar().subscribe({
+      next: (data) => {
+        this.produtos = data;
+        this.loading = false;
       },
-      error: (error) => {
-        console.error('Erro ao carregar produtos:', error);
-        this.isLoading.set(false);
+      error: (err) => {
+        this.erro = 'Erro ao carregar produtos';
+        console.error('Erro ao carregar produtos:', err);
+        this.loading = false;
       }
     });
   }
-  
-  aplicarFiltro(): void {
-    const termo = this.searchTerm().toLowerCase();
-    let filtrados = this.produtos();
-    
-    // Filtro de estoque
-    if (this.filtroEstoque() === 'estoque-baixo') {
-      filtrados = filtrados.filter(p => 
-        p.qtEstoqueMinimo !== undefined && 
-        p.qtEstoque <= p.qtEstoqueMinimo
-      );
-    }
-    
-    // Filtro de busca
-    if (termo) {
-      filtrados = filtrados.filter(produto =>
-        produto.nmProduto.toLowerCase().includes(termo) ||
-        produto.dsProduto?.toLowerCase().includes(termo)
-      );
-    }
-    
-    this.produtosFiltrados.set(filtrados);
-  }
-  
-  alterarFiltroEstoque(filtro: 'todos' | 'estoque-baixo'): void {
-    this.filtroEstoque.set(filtro);
-    this.aplicarFiltro();
-  }
-  
-  abrirModalNovo(): void {
-    this.modoEdicao.set(false);
-    this.produtoEditando.set(null);
+
+  novo(): void {
+    this.modoEdicao = false;
+    this.erro = '';
     this.produtoForm.reset({
-      qtEstoque: 0,
-      qtEstoqueMinimo: 10
+      cdProduto: null,
+      nmProduto: '',
+      dsProduto: '',
+      categoria: '',
+      vlCusto: 0,
+      vlVenda: 0,
+      qtdEstoque: 0,
+      qtdMinimo: 5
     });
-    this.modalInstance?.show();
+    this.mostrarModal = true;
   }
-  
-  abrirModalEditar(produto: Produto): void {
-    this.modoEdicao.set(true);
-    this.produtoEditando.set(produto);
-    
+
+  editar(produto: Produto): void {
+    this.modoEdicao = true;
+    this.erro = '';
     this.produtoForm.patchValue({
+      cdProduto: produto.cdProduto,
       nmProduto: produto.nmProduto,
       dsProduto: produto.dsProduto || '',
-      vlPreco: produto.vlPreco,
-      qtEstoque: produto.qtEstoque,
-      qtEstoqueMinimo: produto.qtEstoqueMinimo || 0
+      categoria: produto.categoria || '',
+      vlCusto: produto.vlCusto,
+      vlVenda: produto.vlVenda,
+      qtdEstoque: produto.qtdEstoque,
+      qtdMinimo: produto.qtdMinimo
     });
-    
-    this.modalInstance?.show();
+    this.mostrarModal = true;
   }
-  
-  fecharModal(): void {
-    this.modalInstance?.hide();
-    this.produtoForm.reset();
-  }
-  
+
   salvar(): void {
     if (this.produtoForm.invalid) {
-      this.marcarCamposComoTocados();
+      this.erro = 'Preencha todos os campos obrigatórios corretamente';
+      Object.keys(this.produtoForm.controls).forEach(key => {
+        const control = this.produtoForm.get(key);
+        if (control?.invalid) {
+          control.markAsTouched();
+        }
+      });
       return;
     }
+
+    // Validar se preço de venda é maior que custo
+    const vlCusto = Number(this.produtoForm.value.vlCusto);
+    const vlVenda = Number(this.produtoForm.value.vlVenda);
     
-    this.isSubmitting.set(true);
-    
-    const formValue = this.produtoForm.value;
-    const dados: ProdutoRequest = {
-      nmProduto: formValue.nmProduto,
-      dsProduto: formValue.dsProduto || undefined,
-      vlPreco: parseFloat(formValue.vlPreco),
-      qtEstoque: parseInt(formValue.qtEstoque),
-      qtEstoqueMinimo: formValue.qtEstoqueMinimo ? parseInt(formValue.qtEstoqueMinimo) : undefined
+    if (vlVenda <= vlCusto) {
+      this.erro = 'Preço de venda deve ser maior que o custo';
+      return;
+    }
+
+    this.loading = true;
+    this.erro = '';
+
+    // Criar objeto tipado corretamente
+    const produtoData: ProdutoRequest = {
+      nmProduto: this.produtoForm.value.nmProduto,
+      dsProduto: this.produtoForm.value.dsProduto || null,
+      categoria: this.produtoForm.value.categoria || null,
+      vlCusto: vlCusto,
+      vlVenda: vlVenda,
+      qtdEstoque: Number(this.produtoForm.value.qtdEstoque),
+      qtdMinimo: Number(this.produtoForm.value.qtdMinimo)
     };
-    
-    const operacao = this.modoEdicao()
-      ? this.produtoService.atualizar(this.produtoEditando()!.cdProduto, dados)
-      : this.produtoService.criar(dados);
-    
-    operacao.subscribe({
+
+    const request = this.modoEdicao
+      ? this.produtoService.atualizar(this.produtoForm.value.cdProduto!, produtoData)
+      : this.produtoService.criar(produtoData);
+
+    request.subscribe({
       next: () => {
-        this.isSubmitting.set(false);
-        this.fecharModal();
+        this.mostrarModal = false;
         this.carregarProdutos();
+        this.loading = false;
       },
-      error: (error) => {
-        console.error('Erro ao salvar produto:', error);
-        this.isSubmitting.set(false);
-        alert(error.message || 'Erro ao salvar produto');
+      error: (err) => {
+        this.erro = 'Erro ao salvar produto';
+        console.error('Erro ao salvar produto:', err);
+        this.loading = false;
       }
     });
   }
-  
-  confirmarExclusao(produto: Produto): void {
-    if (confirm(`Deseja realmente excluir o produto "${produto.nmProduto}"?`)) {
-      this.produtoService.deletar(produto.cdProduto).subscribe({
-        next: () => {
-          this.carregarProdutos();
-        },
-        error: (error) => {
-          console.error('Erro ao excluir produto:', error);
-          alert('Erro ao excluir produto');
-        }
-      });
+
+  excluir(id: number): void {
+    if (!confirm('Deseja realmente excluir este produto?')) {
+      return;
     }
-  }
-  
-  isEstoqueBaixo(produto: Produto): boolean {
-    return produto.qtEstoqueMinimo !== undefined && 
-           produto.qtEstoque <= produto.qtEstoqueMinimo;
-  }
-  
-  formatarMoeda(valor: number): string {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(valor);
-  }
-  
-  isFieldInvalid(fieldName: string): boolean {
-    const field = this.produtoForm.get(fieldName);
-    return !!(field && field.invalid && (field.dirty || field.touched));
-  }
-  
-  getFieldError(fieldName: string): string {
-    const field = this.produtoForm.get(fieldName);
-    
-    if (field?.hasError('required')) return 'Campo obrigatório';
-    if (field?.hasError('min')) return `Valor mínimo: ${field.errors?.['min'].min}`;
-    if (field?.hasError('maxlength')) {
-      const max = field.errors?.['maxlength'].requiredLength;
-      return `Máximo de ${max} caracteres`;
-    }
-    
-    return '';
-  }
-  
-  marcarCamposComoTocados(): void {
-    Object.keys(this.produtoForm.controls).forEach(key => {
-      this.produtoForm.get(key)?.markAsTouched();
+
+    this.loading = true;
+    this.erro = '';
+
+    this.produtoService.deletar(id).subscribe({
+      next: () => {
+        this.carregarProdutos();
+        this.loading = false;
+      },
+      error: (err) => {
+        this.erro = 'Erro ao excluir produto';
+        console.error('Erro ao excluir produto:', err);
+        this.loading = false;
+      }
     });
   }
-  
-  formatarData(data: string): string {
-    return formatarData(data);
+
+  fecharModal(): void {
+    this.mostrarModal = false;
+    this.erro = '';
+  }
+
+  isInvalid(campo: string): boolean {
+    const control = this.produtoForm.get(campo);
+    return !!(control && control.invalid && (control.dirty || control.touched));
+  }
+
+  calcularMargem(custo: number, venda: number): string {
+    if (!custo || !venda || custo === 0) return '0.00';
+    const margem = ((venda - custo) / custo) * 100;
+    return margem.toFixed(2);
+  }
+
+  contarEstoqueBaixo(): number {
+    return this.produtos.filter(p => p.qtdEstoque <= p.qtdMinimo).length;
   }
 }

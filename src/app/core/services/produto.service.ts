@@ -1,38 +1,40 @@
-import { Injectable, inject } from '@angular/core';
+// src/app/core/services/produto.service.ts
+
+import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Produto, ProdutoRequest } from '../models';
+import { Produto, ProdutoRequest } from '../models/produto.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProdutoService {
-  private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/produtos`;
-  
-  // ==================== CRUD ====================
-  criar(data: ProdutoRequest): Observable<Produto> {
-    return this.http.post<Produto>(this.apiUrl, data);
+
+  constructor(private http: HttpClient) {}
+
+  listar(): Observable<Produto[]> {
+    return this.http.get<Produto[]>(this.apiUrl);
   }
-  
+
   buscarPorId(id: number): Observable<Produto> {
     return this.http.get<Produto>(`${this.apiUrl}/${id}`);
   }
-  
-  listarAtivos(): Observable<Produto[]> {
-    return this.http.get<Produto[]>(this.apiUrl);
+
+  criar(produto: ProdutoRequest): Observable<Produto> {
+    return this.http.post<Produto>(this.apiUrl, produto);
   }
-  
-  listarEstoqueBaixo(): Observable<Produto[]> {
-    return this.http.get<Produto[]>(`${this.apiUrl}/estoque-baixo`);
+
+  atualizar(id: number, produto: ProdutoRequest): Observable<Produto> {
+    return this.http.put<Produto>(`${this.apiUrl}/${id}`, produto);
   }
-  
-  atualizar(id: number, data: ProdutoRequest): Observable<Produto> {
-    return this.http.put<Produto>(`${this.apiUrl}/${id}`, data);
-  }
-  
+
   deletar(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  buscarEstoqueBaixo(): Observable<Produto[]> {
+    return this.http.get<Produto[]>(`${this.apiUrl}/estoque-baixo`);
   }
 }
