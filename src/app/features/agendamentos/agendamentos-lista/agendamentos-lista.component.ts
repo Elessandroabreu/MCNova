@@ -175,7 +175,7 @@ export class AgendamentosListaComponent implements OnInit {
         agendamento.cliente?.nmCliente.toLowerCase().includes(termo) ||
         agendamento.veiculo?.placa.toLowerCase().includes(termo) ||
         agendamento.mecanico?.nmUsuario.toLowerCase().includes(termo) ||
-        agendamento.dsServico.toLowerCase().includes(termo)
+        agendamento.observacoes?.toLowerCase().includes(termo)
       );
     }
     
@@ -217,7 +217,6 @@ export class AgendamentosListaComponent implements OnInit {
       cdMecanico: agendamento.mecanico?.cdUsuario || '',
       dataAgendamento: data,
       horaAgendamento: hora,
-      dsServico: agendamento.dsServico,
       observacoes: agendamento.observacoes || ''
     });
     
@@ -253,7 +252,6 @@ export class AgendamentosListaComponent implements OnInit {
       cdVeiculo: formValue.cdVeiculo,
       cdMecanico: formValue.cdMecanico,
       dataAgendamento: dataHoraISO,
-      dsServico: formValue.dsServico,
       observacoes: formValue.observacoes || undefined
     };
     
