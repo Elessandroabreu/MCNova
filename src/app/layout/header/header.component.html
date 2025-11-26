@@ -1,0 +1,31 @@
+<header class="header">
+  <div class="header-content">
+    <!-- Título da Página (pode ser dinâmico depois) -->
+    <div class="header-title">
+      <h5 class="mb-0">Bem-vindo ao Sistema</h5>
+    </div>
+    
+    <!-- Informações do Usuário -->
+    @if (currentUser(); as user) {
+      <div class="user-info">
+        <div class="user-details">
+          <span class="user-name">{{ user.nmUsuario }}</span>
+          <span class="user-role">{{ getRoleLabel(user.roles) }}</span>
+        </div>
+        
+        <div class="user-avatar">
+          <i class="bi bi-person-circle"></i>
+        </div>
+        
+        <button 
+          class="btn btn-sm btn-outline-danger ms-3" 
+          (click)="logout()"
+          title="Sair do Sistema"
+        >
+          <i class="bi bi-box-arrow-right"></i>
+          Sair
+        </button>
+      </div>
+    }
+  </div>
+</header>

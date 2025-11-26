@@ -1,0 +1,356 @@
+<div class="agendamentos-page">
+  <!-- Cabeçalho -->
+  <div class="page-header">
+    <div>
+      <h2>
+        <i class="bi bi-calendar3 me-2"></i>
+        Agendamentos
+      </h2>
+      <p class="text-muted mb-0">Gerenciamento de agendamentos de serviços</p>
+    </div>
+    
+    <button class="btn btn-primary" (click)="abrirModalNovo()">
+      <i class="bi bi-plus-circle me-2"></i>
+      Novo Agendamento
+    </button>
+  </div>
+  
+  <!-- Filtros -->
+  <div class="filters-bar card">
+    <div class="card-body">
+      <div class="row g-3">
+        <!-- Busca -->
+        <div class="col-md-12">
+          <div class="input-group">
+            <span class="input-group-text">
+              <i class="bi bi-search"></i>
+            </span>
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Buscar por cliente, veículo, mecânico ou serviço..."
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="aplicarFiltro()"
+            />
+          </div>
+        </div>
+        
+        <!-- Filtro de Status -->
+        <div class="col-md-12">
+          <div class="status-filters">
+            @for (status of statusOptions; track status.value) {
+              <button
+                type="button"
+                class="btn btn-sm"
+                [class]="'btn-' + status.class"
+                [class.active]="filtroStatus() === status.value"
+                (click)="alterarFiltroStatus(status.value)"
+              >
+                {{ status.label }}
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Carregando...</span>
+      </div>
+      <p class="text-muted mt-2">Carregando agendamentos...</p>
+    </div>
+  } @else {
+    <!-- Tabela de Agendamentos -->
+    <div class="card">
+      <div class="card-body p-0">
+        @if (agendamentosFiltrados().length === 0) {
+          <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <p>Nenhum agendamento encontrado</p>
+          </div>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>Data/Hora</th>
+                  <th>Cliente</th>
+                  <th>Veículo</th>
+                  <th>Serviço</th>
+                  <th>Mecânico</th>
+                  <th>Status</th>
+                  <th class="text-center">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (agendamento of agendamentosFiltrados(); track agendamento.cdAgendamento) {
+                  <tr>
+                    <td>
+                      <strong>{{ formatarDataHora(agendamento.dataAgendamento) }}</strong>
+                    </td>
+                    <td>{{ agendamento.cliente?.nmCliente || '-' }}</td>
+                    <td>
+                      <span class="placa">{{ agendamento.veiculo?.placa || '-' }}</span>
+                      <br>
+                      <small class="text-muted">{{ agendamento.veiculo?.modelo || '-' }}</small>
+                    </td>
+                    <td>
+                      <small>{{ agendamento.dsServico }}</small>
+                    </td>
+                    <td>{{ agendamento.mecanico?.nmUsuario || '-' }}</td>
+                    <td>
+                      <span class="badge" [ngClass]="getStatusClass(agendamento.status)">
+                        {{ getStatusLabel(agendamento.status) }}
+                      </span>
+                    </td>
+                    <td class="text-center">
+                      <div class="btn-group btn-group-sm">
+                        @if (agendamento.status === 'AGENDADO') {
+                          <button
+                            class="btn btn-outline-primary"
+                            (click)="abrirModalEditar(agendamento)"
+                            title="Editar"
+                          >
+                            <i class="bi bi-pencil"></i>
+                          </button>
+                          <button
+                            class="btn btn-outline-danger"
+                            (click)="confirmarCancelamento(agendamento)"
+                            title="Cancelar"
+                          >
+                            <i class="bi bi-x-circle"></i>
+                          </button>
+                        } @else {
+                          <button
+                            class="btn btn-outline-secondary"
+                            disabled
+                            title="Não é possível editar"
+                          >
+                            <i class="bi bi-lock"></i>
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Rodapé com Total -->
+          <div class="table-footer">
+            <span class="text-muted">
+              Total: <strong>{{ agendamentosFiltrados().length }}</strong> agendamento(s)
+            </span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
+
+<!-- Modal de Agendamento -->
+<div class="modal fade" #agendamentoModal tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          @if (modoEdicao()) {
+            <i class="bi bi-pencil me-2"></i>
+            Editar Agendamento
+          } @else {
+            <i class="bi bi-plus-circle me-2"></i>
+            Novo Agendamento
+          }
+        </h5>
+        <button type="button" class="btn-close" (click)="fecharModal()"></button>
+      </div>
+      
+      <form [formGroup]="agendamentoForm" (ngSubmit)="salvar()">
+        <div class="modal-body">
+          <div class="row g-3">
+            <!-- Cliente -->
+            <div class="col-md-12">
+              <label for="cdCliente" class="form-label">
+                Cliente <span class="text-danger">*</span>
+              </label>
+              <select
+                class="form-select"
+                id="cdCliente"
+                formControlName="cdCliente"
+                [class.is-invalid]="isFieldInvalid('cdCliente')"
+              >
+                <option value="">Selecione o cliente</option>
+                @for (cliente of clientes(); track cliente.cdCliente) {
+                  <option [value]="cliente.cdCliente">{{ cliente.nmCliente }}</option>
+                }
+              </select>
+              @if (isFieldInvalid('cdCliente')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError('cdCliente') }}
+                </div>
+              }
+            </div>
+            
+            <!-- Veículo -->
+            <div class="col-md-12">
+              <label for="cdVeiculo" class="form-label">
+                Veículo <span class="text-danger">*</span>
+              </label>
+              <select
+                class="form-select"
+                id="cdVeiculo"
+                formControlName="cdVeiculo"
+                [class.is-invalid]="isFieldInvalid('cdVeiculo')"
+                [disabled]="!agendamentoForm.get('cdCliente')?.value"
+              >
+                <option value="">Selecione o veículo</option>
+                @for (veiculo of veiculosCliente(); track veiculo.cdVeiculo) {
+                  <option [value]="veiculo.cdVeiculo">
+                    {{ veiculo.placa }} - {{ veiculo.modelo }}
+                  </option>
+                }
+              </select>
+              @if (isFieldInvalid('cdVeiculo')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError('cdVeiculo') }}
+                </div>
+              }
+              @if (!agendamentoForm.get('cdCliente')?.value) {
+                <small class="form-text text-muted">
+                  Selecione um cliente primeiro
+                </small>
+              }
+            </div>
+            
+            <!-- Data e Hora -->
+            <div class="col-md-6">
+              <label for="dataAgendamento" class="form-label">
+                Data <span class="text-danger">*</span>
+              </label>
+              <input
+                type="date"
+                class="form-control"
+                id="dataAgendamento"
+                formControlName="dataAgendamento"
+                [class.is-invalid]="isFieldInvalid('dataAgendamento')"
+              />
+              @if (isFieldInvalid('dataAgendamento')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError('dataAgendamento') }}
+                </div>
+              }
+            </div>
+            
+            <div class="col-md-6">
+              <label for="horaAgendamento" class="form-label">
+                Hora <span class="text-danger">*</span>
+              </label>
+              <input
+                type="time"
+                class="form-control"
+                id="horaAgendamento"
+                formControlName="horaAgendamento"
+                [class.is-invalid]="isFieldInvalid('horaAgendamento')"
+              />
+              @if (isFieldInvalid('horaAgendamento')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError('horaAgendamento') }}
+                </div>
+              }
+            </div>
+            
+            <!-- Mecânico -->
+            <div class="col-md-12">
+              <label for="cdMecanico" class="form-label">
+                Mecânico Responsável <span class="text-danger">*</span>
+              </label>
+              <select
+                class="form-select"
+                id="cdMecanico"
+                formControlName="cdMecanico"
+                [class.is-invalid]="isFieldInvalid('cdMecanico')"
+              >
+                <option value="">Selecione o mecânico</option>
+                @for (mecanico of mecanicos(); track mecanico.cdUsuario) {
+                  <option [value]="mecanico.cdUsuario">{{ mecanico.nmUsuario }}</option>
+                }
+              </select>
+              @if (isFieldInvalid('cdMecanico')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError('cdMecanico') }}
+                </div>
+              }
+            </div>
+            
+            <!-- Descrição do Serviço -->
+            <div class="col-md-12">
+              <label for="dsServico" class="form-label">
+                Descrição do Serviço <span class="text-danger">*</span>
+              </label>
+              <textarea
+                class="form-control"
+                id="dsServico"
+                formControlName="dsServico"
+                rows="2"
+                placeholder="Ex: Revisão completa, Troca de óleo..."
+                [class.is-invalid]="isFieldInvalid('dsServico')"
+              ></textarea>
+              @if (isFieldInvalid('dsServico')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError('dsServico') }}
+                </div>
+              }
+            </div>
+            
+            <!-- Observações -->
+            <div class="col-md-12">
+              <label for="observacoes" class="form-label">Observações</label>
+              <textarea
+                class="form-control"
+                id="observacoes"
+                formControlName="observacoes"
+                rows="2"
+                placeholder="Observações adicionais..."
+                [class.is-invalid]="isFieldInvalid('observacoes')"
+              ></textarea>
+              @if (isFieldInvalid('observacoes')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError('observacoes') }}
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="fecharModal()"
+            [disabled]="isSubmitting()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="isSubmitting()"
+          >
+            @if (isSubmitting()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+              Salvando...
+            } @else {
+              <i class="bi bi-check-circle me-2"></i>
+              Salvar
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

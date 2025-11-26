@@ -1,0 +1,224 @@
+<div class="servicos-page">
+  <!-- Cabeçalho -->
+  <div class="page-header">
+    <div>
+      <h2>
+        <i class="bi bi-tools me-2"></i>
+        Serviços
+      </h2>
+      <p class="text-muted mb-0">Gerenciamento de serviços oferecidos</p>
+    </div>
+    
+    <button class="btn btn-primary" (click)="abrirModalNovo()">
+      <i class="bi bi-plus-circle me-2"></i>
+      Novo Serviço
+    </button>
+  </div>
+  
+  <!-- Barra de Pesquisa -->
+  <div class="search-bar card">
+    <div class="card-body">
+      <div class="input-group">
+        <span class="input-group-text">
+          <i class="bi bi-search"></i>
+        </span>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Buscar por nome ou descrição..."
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="aplicarFiltro()"
+        />
+      </div>
+    </div>
+  </div>
+  
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Carregando...</span>
+      </div>
+      <p class="text-muted mt-2">Carregando serviços...</p>
+    </div>
+  } @else {
+    <!-- Tabela de Serviços -->
+    <div class="card">
+      <div class="card-body p-0">
+        @if (servicosFiltrados().length === 0) {
+          <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <p>Nenhum serviço encontrado</p>
+          </div>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>Serviço</th>
+                  <th>Descrição</th>
+                  <th>Valor</th>
+                  <th>Cadastro</th>
+                  <th class="text-center">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (servico of servicosFiltrados(); track servico.cdServico) {
+                  <tr>
+                    <td>
+                      <strong>{{ servico.nmServico }}</strong>
+                    </td>
+                    <td>
+                      <small class="text-muted">{{ servico.dsServico || '-' }}</small>
+                    </td>
+                    <td>
+                      <strong class="text-success">{{ formatarMoeda(servico.vlServico) }}</strong>
+                    </td>
+                    <td>
+                      <small class="text-muted">{{ formatarData(servico.dataCadastro) }}</small>
+                    </td>
+                    <td class="text-center">
+                      <div class="btn-group btn-group-sm">
+                        <button
+                          class="btn btn-outline-primary"
+                          (click)="abrirModalEditar(servico)"
+                          title="Editar"
+                        >
+                          <i class="bi bi-pencil"></i>
+                        </button>
+                        <button
+                          class="btn btn-outline-danger"
+                          (click)="confirmarExclusao(servico)"
+                          title="Excluir"
+                        >
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Rodapé com Total -->
+          <div class="table-footer">
+            <span class="text-muted">
+              Total: <strong>{{ servicosFiltrados().length }}</strong> serviço(s)
+            </span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
+
+<!-- Modal de Serviço -->
+<div class="modal fade" #servicoModal tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          @if (modoEdicao()) {
+            <i class="bi bi-pencil me-2"></i>
+            Editar Serviço
+          } @else {
+            <i class="bi bi-plus-circle me-2"></i>
+            Novo Serviço
+          }
+        </h5>
+        <button type="button" class="btn-close" (click)="fecharModal()"></button>
+      </div>
+      
+      <form [formGroup]="servicoForm" (ngSubmit)="salvar()">
+        <div class="modal-body">
+          <div class="row g-3">
+            <!-- Nome do Serviço -->
+            <div class="col-12">
+              <label for="nmServico" class="form-label">
+                Nome do Serviço <span class="text-danger">*</span>
+              </label>
+              <input
+                type="text"
+                class="form-control"
+                id="nmServico"
+                formControlName="nmServico"
+                placeholder="Ex: Troca de Óleo"
+                [class.is-invalid]="isFieldInvalid('nmServico')"
+              />
+              @if (isFieldInvalid('nmServico')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError('nmServico') }}
+                </div>
+              }
+            </div>
+            
+            <!-- Descrição -->
+            <div class="col-12">
+              <label for="dsServico" class="form-label">Descrição</label>
+              <textarea
+                class="form-control"
+                id="dsServico"
+                formControlName="dsServico"
+                rows="3"
+                placeholder="Descrição detalhada do serviço..."
+                [class.is-invalid]="isFieldInvalid('dsServico')"
+              ></textarea>
+              @if (isFieldInvalid('dsServico')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError('dsServico') }}
+                </div>
+              }
+            </div>
+            
+            <!-- Valor -->
+            <div class="col-12">
+              <label for="vlServico" class="form-label">
+                Valor (R$) <span class="text-danger">*</span>
+              </label>
+              <input
+                type="number"
+                class="form-control"
+                id="vlServico"
+                formControlName="vlServico"
+                placeholder="0.00"
+                step="0.01"
+                min="0"
+                [class.is-invalid]="isFieldInvalid('vlServico')"
+              />
+              @if (isFieldInvalid('vlServico')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError('vlServico') }}
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="fecharModal()"
+            [disabled]="isSubmitting()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="isSubmitting()"
+          >
+            @if (isSubmitting()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+              Salvando...
+            } @else {
+              <i class="bi bi-check-circle me-2"></i>
+              Salvar
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

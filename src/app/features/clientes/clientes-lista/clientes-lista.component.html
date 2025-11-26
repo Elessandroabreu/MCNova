@@ -1,0 +1,258 @@
+<div class="clientes-page">
+  <!-- Cabeçalho -->
+  <div class="page-header">
+    <div>
+      <h2>
+        <i class="bi bi-people me-2"></i>
+        Clientes
+      </h2>
+      <p class="text-muted mb-0">Gerenciamento de clientes cadastrados</p>
+    </div>
+    
+    <button class="btn btn-primary" (click)="abrirModalNovo()">
+      <i class="bi bi-plus-circle me-2"></i>
+      Novo Cliente
+    </button>
+  </div>
+  
+  <!-- Barra de Pesquisa -->
+  <div class="search-bar card">
+    <div class="card-body">
+      <div class="input-group">
+        <span class="input-group-text">
+          <i class="bi bi-search"></i>
+        </span>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Buscar por nome, CPF, email ou telefone..."
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="aplicarFiltro()"
+        />
+      </div>
+    </div>
+  </div>
+  
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Carregando...</span>
+      </div>
+      <p class="text-muted mt-2">Carregando clientes...</p>
+    </div>
+  } @else {
+    <!-- Tabela de Clientes -->
+    <div class="card">
+      <div class="card-body p-0">
+        @if (clientesFiltrados().length === 0) {
+          <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <p>Nenhum cliente encontrado</p>
+          </div>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>CPF</th>
+                  <th>Telefone</th>
+                  <th>Email</th>
+                  <th>Cadastro</th>
+                  <th class="text-center">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (cliente of clientesFiltrados(); track cliente.cdCliente) {
+                  <tr>
+                    <td>
+                      <strong>{{ cliente.nmCliente }}</strong>
+                    </td>
+                    <td>{{ cliente.nuCPF || '-' }}</td>
+                    <td>{{ cliente.nuTelefone || '-' }}</td>
+                    <td>{{ cliente.email || '-' }}</td>
+                    <td>
+                      <small class="text-muted">{{ formatarData(cliente.dataCadastro) }}</small>
+                    </td>
+                    <td class="text-center">
+                      <div class="btn-group btn-group-sm">
+                        <button
+                          class="btn btn-outline-primary"
+                          (click)="abrirModalEditar(cliente)"
+                          title="Editar"
+                        >
+                          <i class="bi bi-pencil"></i>
+                        </button>
+                        <button
+                          class="btn btn-outline-danger"
+                          (click)="confirmarExclusao(cliente)"
+                          title="Excluir"
+                        >
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Rodapé com Total -->
+          <div class="table-footer">
+            <span class="text-muted">
+              Total: <strong>{{ clientesFiltrados().length }}</strong> cliente(s)
+            </span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
+
+<!-- Modal de Cliente -->
+<div class="modal fade" #clienteModal tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          @if (modoEdicao()) {
+            <i class="bi bi-pencil me-2"></i>
+            Editar Cliente
+          } @else {
+            <i class="bi bi-plus-circle me-2"></i>
+            Novo Cliente
+          }
+        </h5>
+        <button type="button" class="btn-close" (click)="fecharModal()"></button>
+      </div>
+      
+      <form [formGroup]="clienteForm" (ngSubmit)="salvar()">
+        <div class="modal-body">
+          <div class="row g-3">
+            <!-- Nome -->
+            <div class="col-md-12">
+              <label for="nmCliente" class="form-label">
+                Nome Completo <span class="text-danger">*</span>
+              </label>
+              <input
+                type="text"
+                class="form-control"
+                id="nmCliente"
+                formControlName="nmCliente"
+                placeholder="Digite o nome completo"
+                [class.is-invalid]="isFieldInvalid('nmCliente')"
+              />
+              @if (isFieldInvalid('nmCliente')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError('nmCliente') }}
+                </div>
+              }
+            </div>
+            
+            <!-- CPF -->
+            <div class="col-md-6">
+              <label for="nuCPF" class="form-label">CPF</label>
+              <input
+                type="text"
+                class="form-control"
+                id="nuCPF"
+                formControlName="nuCPF"
+                placeholder="000.000.000-00"
+                maxlength="14"
+                (input)="formatarCPFInput($event)"
+                [class.is-invalid]="isFieldInvalid('nuCPF')"
+              />
+              @if (isFieldInvalid('nuCPF')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError('nuCPF') }}
+                </div>
+              }
+            </div>
+            
+            <!-- Telefone -->
+            <div class="col-md-6">
+              <label for="nuTelefone" class="form-label">Telefone</label>
+              <input
+                type="text"
+                class="form-control"
+                id="nuTelefone"
+                formControlName="nuTelefone"
+                placeholder="(00) 00000-0000"
+                maxlength="15"
+                (input)="formatarTelefoneInput($event)"
+                [class.is-invalid]="isFieldInvalid('nuTelefone')"
+              />
+              @if (isFieldInvalid('nuTelefone')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError('nuTelefone') }}
+                </div>
+              }
+            </div>
+            
+            <!-- Email -->
+            <div class="col-md-12">
+              <label for="email" class="form-label">Email</label>
+              <input
+                type="email"
+                class="form-control"
+                id="email"
+                formControlName="email"
+                placeholder="email@exemplo.com"
+                [class.is-invalid]="isFieldInvalid('email')"
+              />
+              @if (isFieldInvalid('email')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError('email') }}
+                </div>
+              }
+            </div>
+            
+            <!-- Endereço -->
+            <div class="col-md-12">
+              <label for="dsEndereco" class="form-label">Endereço</label>
+              <textarea
+                class="form-control"
+                id="dsEndereco"
+                formControlName="dsEndereco"
+                rows="2"
+                placeholder="Rua, número, bairro, cidade..."
+                [class.is-invalid]="isFieldInvalid('dsEndereco')"
+              ></textarea>
+              @if (isFieldInvalid('dsEndereco')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError('dsEndereco') }}
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="fecharModal()"
+            [disabled]="isSubmitting()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="isSubmitting()"
+          >
+            @if (isSubmitting()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+              Salvando...
+            } @else {
+              <i class="bi bi-check-circle me-2"></i>
+              Salvar
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,28 @@
+<aside class="sidebar">
+  <!-- Logo -->
+  <div class="sidebar-header">
+    <h4 class="mb-0">
+      <i class="bi bi-wrench-adjustable me-2"></i>
+      <span class="brand-text">SGM</span>
+    </h4>
+    <p class="sidebar-subtitle mb-0">GESTÃO MECÂNICA</p>
+  </div>
+  
+  <!-- Menu Items -->
+  <nav class="sidebar-nav">
+    <ul class="nav flex-column">
+      @for (item of visibleMenuItems; track item.route) {
+        <li class="nav-item">
+          <a 
+            class="nav-link" 
+            [routerLink]="item.route"
+            routerLinkActive="active"
+          >
+            <i class="bi" [ngClass]="item.icon"></i>
+            <span>{{ item.label }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+  </nav>
+</aside>

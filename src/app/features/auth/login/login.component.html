@@ -1,0 +1,131 @@
+<div class="login-page">
+  <div class="login-container">
+    <!-- Card de Login -->
+    <div class="login-card">
+      <!-- Logo/Header -->
+      <div class="login-header">
+        <i class="bi bi-wrench-adjustable"></i>
+        <h2>SGM</h2>
+        <p class="text-muted">Sistema de Gestão Mecânica</p>
+      </div>
+      
+      <!-- Alerta de Erro -->
+      @if (errorMessage()) {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          {{ errorMessage() }}
+          <button 
+            type="button" 
+            class="btn-close" 
+            (click)="errorMessage.set(null)"
+            aria-label="Close"
+          ></button>
+        </div>
+      }
+      
+      <!-- Formulário de Login -->
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+        <!-- Email -->
+        <div class="mb-3">
+          <label for="email" class="form-label">
+            <i class="bi bi-envelope me-1"></i>
+            Email
+          </label>
+          <input
+            type="email"
+            class="form-control"
+            id="email"
+            formControlName="email"
+            placeholder="seu.email@exemplo.com"
+            [class.is-invalid]="isFieldInvalid('email')"
+          />
+          @if (isFieldInvalid('email')) {
+            <div class="invalid-feedback">
+              {{ getFieldError('email') }}
+            </div>
+          }
+        </div>
+        
+        <!-- Senha -->
+        <div class="mb-3">
+          <label for="password" class="form-label">
+            <i class="bi bi-lock me-1"></i>
+            Senha
+          </label>
+          <div class="input-group">
+            <input
+              [type]="showPassword() ? 'text' : 'password'"
+              class="form-control"
+              id="password"
+              formControlName="password"
+              placeholder="Digite sua senha"
+              [class.is-invalid]="isFieldInvalid('password')"
+            />
+            <button
+              class="btn btn-outline-secondary"
+              type="button"
+              (click)="togglePasswordVisibility()"
+              [attr.aria-label]="showPassword() ? 'Ocultar senha' : 'Mostrar senha'"
+            >
+              <i class="bi" [ngClass]="showPassword() ? 'bi-eye-slash' : 'bi-eye'"></i>
+            </button>
+          </div>
+          @if (isFieldInvalid('password')) {
+            <div class="invalid-feedback d-block">
+              {{ getFieldError('password') }}
+            </div>
+          }
+        </div>
+        
+        <!-- Botão Login -->
+        <button
+          type="submit"
+          class="btn btn-primary w-100 mb-3"
+          [disabled]="isLoading()"
+        >
+          @if (isLoading()) {
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            Entrando...
+          } @else {
+            <i class="bi bi-box-arrow-in-right me-2"></i>
+            Entrar
+          }
+        </button>
+      </form>
+      
+      <!-- Divisor -->
+      <div class="divider">
+        <span>OU</span>
+      </div>
+      
+      <!-- Login com Google -->
+      <button
+        type="button"
+        class="btn btn-outline-danger w-100"
+        (click)="loginWithGoogle()"
+        [disabled]="isLoading()"
+      >
+        <i class="bi bi-google me-2"></i>
+        Entrar com Google
+      </button>
+      
+      <!-- Informações de Teste -->
+      <div class="test-info mt-4">
+        <p class="text-muted mb-2 text-center">
+          <small><i class="bi bi-info-circle me-1"></i>Usuários de teste:</small>
+        </p>
+        <div class="test-users">
+          <div class="test-user">
+            <strong>Admin:</strong> admin@oficina.com | senha123
+          </div>
+          <div class="test-user">
+            <strong>Atendente:</strong> atendente@oficina.com | senha123
+          </div>
+          <div class="test-user">
+            <strong>Mecânico:</strong> mecanico@oficina.com | senha123
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

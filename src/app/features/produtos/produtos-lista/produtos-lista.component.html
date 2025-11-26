@@ -1,0 +1,325 @@
+<div class="produtos-page">
+  <!-- Cabeçalho -->
+  <div class="page-header">
+    <div>
+      <h2>
+        <i class="bi bi-box-seam me-2"></i>
+        Produtos / Estoque
+      </h2>
+      <p class="text-muted mb-0">Gerenciamento de produtos e controle de estoque</p>
+    </div>
+    
+    <button class="btn btn-primary" (click)="abrirModalNovo()">
+      <i class="bi bi-plus-circle me-2"></i>
+      Novo Produto
+    </button>
+  </div>
+  
+  <!-- Filtros -->
+  <div class="filters-bar card">
+    <div class="card-body">
+      <div class="row g-3">
+        <!-- Busca -->
+        <div class="col-md-8">
+          <div class="input-group">
+            <span class="input-group-text">
+              <i class="bi bi-search"></i>
+            </span>
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Buscar por nome ou descrição..."
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="aplicarFiltro()"
+            />
+          </div>
+        </div>
+        
+        <!-- Filtro de Estoque -->
+        <div class="col-md-4">
+          <div class="btn-group w-100" role="group">
+            <button
+              type="button"
+              class="btn"
+              [class.btn-primary]="filtroEstoque() === 'todos'"
+              [class.btn-outline-primary]="filtroEstoque() !== 'todos'"
+              (click)="alterarFiltroEstoque('todos')"
+            >
+              Todos
+            </button>
+            <button
+              type="button"
+              class="btn"
+              [class.btn-danger]="filtroEstoque() === 'estoque-baixo'"
+              [class.btn-outline-danger]="filtroEstoque() !== 'estoque-baixo'"
+              (click)="alterarFiltroEstoque('estoque-baixo')"
+            >
+              <i class="bi bi-exclamation-triangle me-1"></i>
+              Estoque Baixo
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Carregando...</span>
+      </div>
+      <p class="text-muted mt-2">Carregando produtos...</p>
+    </div>
+  } @else {
+    <!-- Tabela de Produtos -->
+    <div class="card">
+      <div class="card-body p-0">
+        @if (produtosFiltrados().length === 0) {
+          <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <p>Nenhum produto encontrado</p>
+          </div>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>Produto</th>
+                  <th>Descrição</th>
+                  <th>Preço</th>
+                  <th>Estoque</th>
+                  <th>Mín.</th>
+                  <th>Status</th>
+                  <th>Cadastro</th>
+                  <th class="text-center">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (produto of produtosFiltrados(); track produto.cdProduto) {
+                  <tr [class.table-warning]="isEstoqueBaixo(produto)">
+                    <td>
+                      <strong>{{ produto.nmProduto }}</strong>
+                    </td>
+                    <td>
+                      <small class="text-muted">{{ produto.dsProduto || '-' }}</small>
+                    </td>
+                    <td>
+                      <strong class="text-success">{{ formatarMoeda(produto.vlPreco) }}</strong>
+                    </td>
+                    <td>
+                      <span 
+                        class="badge"
+                        [class.bg-danger]="isEstoqueBaixo(produto)"
+                        [class.bg-success]="!isEstoqueBaixo(produto)"
+                      >
+                        {{ produto.qtEstoque }}
+                      </span>
+                    </td>
+                    <td>{{ produto.qtEstoqueMinimo || '-' }}</td>
+                    <td>
+                      @if (isEstoqueBaixo(produto)) {
+                        <span class="badge bg-danger">
+                          <i class="bi bi-exclamation-triangle"></i>
+                          Baixo
+                        </span>
+                      } @else {
+                        <span class="badge bg-success">
+                          <i class="bi bi-check-circle"></i>
+                          OK
+                        </span>
+                      }
+                    </td>
+                    <td>
+                      <small class="text-muted">{{ formatarData(produto.dataCadastro) }}</small>
+                    </td>
+                    <td class="text-center">
+                      <div class="btn-group btn-group-sm">
+                        <button
+                          class="btn btn-outline-primary"
+                          (click)="abrirModalEditar(produto)"
+                          title="Editar"
+                        >
+                          <i class="bi bi-pencil"></i>
+                        </button>
+                        <button
+                          class="btn btn-outline-danger"
+                          (click)="confirmarExclusao(produto)"
+                          title="Excluir"
+                        >
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Rodapé com Total -->
+          <div class="table-footer">
+            <span class="text-muted">
+              Total: <strong>{{ produtosFiltrados().length }}</strong> produto(s)
+            </span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
+
+<!-- Modal de Produto -->
+<div class="modal fade" #produtoModal tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          @if (modoEdicao()) {
+            <i class="bi bi-pencil me-2"></i>
+            Editar Produto
+          } @else {
+            <i class="bi bi-plus-circle me-2"></i>
+            Novo Produto
+          }
+        </h5>
+        <button type="button" class="btn-close" (click)="fecharModal()"></button>
+      </div>
+      
+      <form [formGroup]="produtoForm" (ngSubmit)="salvar()">
+        <div class="modal-body">
+          <div class="row g-3">
+            <!-- Nome do Produto -->
+            <div class="col-md-12">
+              <label for="nmProduto" class="form-label">
+                Nome do Produto <span class="text-danger">*</span>
+              </label>
+              <input
+                type="text"
+                class="form-control"
+                id="nmProduto"
+                formControlName="nmProduto"
+                placeholder="Ex: Óleo Motor 5W30"
+                [class.is-invalid]="isFieldInvalid('nmProduto')"
+              />
+              @if (isFieldInvalid('nmProduto')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError('nmProduto') }}
+                </div>
+              }
+            </div>
+            
+            <!-- Descrição -->
+            <div class="col-md-12">
+              <label for="dsProduto" class="form-label">Descrição</label>
+              <textarea
+                class="form-control"
+                id="dsProduto"
+                formControlName="dsProduto"
+                rows="2"
+                placeholder="Descrição detalhada do produto..."
+                [class.is-invalid]="isFieldInvalid('dsProduto')"
+              ></textarea>
+              @if (isFieldInvalid('dsProduto')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError('dsProduto') }}
+                </div>
+              }
+            </div>
+            
+            <!-- Preço -->
+            <div class="col-md-4">
+              <label for="vlPreco" class="form-label">
+                Preço (R$) <span class="text-danger">*</span>
+              </label>
+              <input
+                type="number"
+                class="form-control"
+                id="vlPreco"
+                formControlName="vlPreco"
+                placeholder="0.00"
+                step="0.01"
+                min="0"
+                [class.is-invalid]="isFieldInvalid('vlPreco')"
+              />
+              @if (isFieldInvalid('vlPreco')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError('vlPreco') }}
+                </div>
+              }
+            </div>
+            
+            <!-- Quantidade em Estoque -->
+            <div class="col-md-4">
+              <label for="qtEstoque" class="form-label">
+                Estoque Atual <span class="text-danger">*</span>
+              </label>
+              <input
+                type="number"
+                class="form-control"
+                id="qtEstoque"
+                formControlName="qtEstoque"
+                placeholder="0"
+                min="0"
+                [class.is-invalid]="isFieldInvalid('qtEstoque')"
+              />
+              @if (isFieldInvalid('qtEstoque')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError('qtEstoque') }}
+                </div>
+              }
+            </div>
+            
+            <!-- Estoque Mínimo -->
+            <div class="col-md-4">
+              <label for="qtEstoqueMinimo" class="form-label">
+                Estoque Mínimo
+              </label>
+              <input
+                type="number"
+                class="form-control"
+                id="qtEstoqueMinimo"
+                formControlName="qtEstoqueMinimo"
+                placeholder="10"
+                min="0"
+                [class.is-invalid]="isFieldInvalid('qtEstoqueMinimo')"
+              />
+              @if (isFieldInvalid('qtEstoqueMinimo')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError('qtEstoqueMinimo') }}
+                </div>
+              }
+              <small class="form-text text-muted">
+                Alerta quando o estoque estiver abaixo deste valor
+              </small>
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="fecharModal()"
+            [disabled]="isSubmitting()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="isSubmitting()"
+          >
+            @if (isSubmitting()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+              Salvando...
+            } @else {
+              <i class="bi bi-check-circle me-2"></i>
+              Salvar
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

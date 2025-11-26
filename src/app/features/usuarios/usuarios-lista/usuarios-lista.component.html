@@ -1,0 +1,268 @@
+<div class="usuarios-page">
+  <!-- Cabeçalho -->
+  <div class="page-header">
+    <div>
+      <h2>
+        <i class="bi bi-people-fill me-2"></i>
+        Usuários
+      </h2>
+      <p class="text-muted mb-0">Gerenciamento de usuários do sistema</p>
+    </div>
+    
+    <button class="btn btn-primary" (click)="abrirModalNovo()">
+      <i class="bi bi-plus-circle me-2"></i>
+      Novo Usuário
+    </button>
+  </div>
+  
+  <!-- Barra de Pesquisa -->
+  <div class="search-bar card">
+    <div class="card-body">
+      <div class="input-group">
+        <span class="input-group-text">
+          <i class="bi bi-search"></i>
+        </span>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Buscar por nome ou email..."
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="aplicarFiltro()"
+        />
+      </div>
+    </div>
+  </div>
+  
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Carregando...</span>
+      </div>
+      <p class="text-muted mt-2">Carregando usuários...</p>
+    </div>
+  } @else {
+    <!-- Tabela de Usuários -->
+    <div class="card">
+      <div class="card-body p-0">
+        @if (usuariosFiltrados().length === 0) {
+          <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <p>Nenhum usuário encontrado</p>
+          </div>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Email</th>
+                  <th>Perfil</th>
+                  <th>Autenticação</th>
+                  <th>Cadastro</th>
+                  <th class="text-center">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (usuario of usuariosFiltrados(); track usuario.cdUsuario) {
+                  <tr>
+                    <td>
+                      <strong>{{ usuario.nmUsuario }}</strong>
+                    </td>
+                    <td>{{ usuario.email }}</td>
+                    <td>
+                      <span class="badge bg-info">
+                        {{ getRolesLabel(usuario.roles) }}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="badge" [ngClass]="getProviderBadgeClass(usuario.authProvider)">
+                        <i class="bi" [ngClass]="usuario.authProvider === 'GOOGLE' ? 'bi-google' : 'bi-shield-lock'"></i>
+                        {{ getProviderLabel(usuario.authProvider) }}
+                      </span>
+                    </td>
+                    <td>
+                      <small class="text-muted">{{ formatarData(usuario.dataCadastro) }}</small>
+                    </td>
+                    <td class="text-center">
+                      <div class="btn-group btn-group-sm">
+                        <button
+                          class="btn btn-outline-primary"
+                          (click)="abrirModalEditar(usuario)"
+                          title="Editar"
+                        >
+                          <i class="bi bi-pencil"></i>
+                        </button>
+                        <button
+                          class="btn btn-outline-danger"
+                          (click)="confirmarExclusao(usuario)"
+                          title="Excluir"
+                        >
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Rodapé com Total -->
+          <div class="table-footer">
+            <span class="text-muted">
+              Total: <strong>{{ usuariosFiltrados().length }}</strong> usuário(s)
+            </span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
+
+<!-- Modal de Usuário -->
+<div class="modal fade" #usuarioModal tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          @if (modoEdicao()) {
+            <i class="bi bi-pencil me-2"></i>
+            Editar Usuário
+          } @else {
+            <i class="bi bi-plus-circle me-2"></i>
+            Novo Usuário
+          }
+        </h5>
+        <button type="button" class="btn-close" (click)="fecharModal()"></button>
+      </div>
+      
+      <form [formGroup]="usuarioForm" (ngSubmit)="salvar()">
+        <div class="modal-body">
+          <div class="row g-3">
+            <!-- Nome -->
+            <div class="col-12">
+              <label for="nmUsuario" class="form-label">
+                Nome Completo <span class="text-danger">*</span>
+              </label>
+              <input
+                type="text"
+                class="form-control"
+                id="nmUsuario"
+                formControlName="nmUsuario"
+                placeholder="Digite o nome completo"
+                [class.is-invalid]="isFieldInvalid('nmUsuario')"
+              />
+              @if (isFieldInvalid('nmUsuario')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError('nmUsuario') }}
+                </div>
+              }
+            </div>
+            
+            <!-- Email -->
+            <div class="col-12">
+              <label for="email" class="form-label">
+                Email <span class="text-danger">*</span>
+              </label>
+              <input
+                type="email"
+                class="form-control"
+                id="email"
+                formControlName="email"
+                placeholder="email@exemplo.com"
+                [class.is-invalid]="isFieldInvalid('email')"
+              />
+              @if (isFieldInvalid('email')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError('email') }}
+                </div>
+              }
+            </div>
+            
+            <!-- Senha -->
+            <div class="col-12">
+              <label for="senha" class="form-label">
+                Senha 
+                @if (!modoEdicao()) {
+                  <span class="text-danger">*</span>
+                }
+              </label>
+              <input
+                type="password"
+                class="form-control"
+                id="senha"
+                formControlName="senha"
+                [placeholder]="modoEdicao() ? 'Deixe em branco para manter a senha atual' : 'Mínimo 6 caracteres'"
+                [class.is-invalid]="isFieldInvalid('senha')"
+              />
+              @if (isFieldInvalid('senha')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError('senha') }}
+                </div>
+              }
+              @if (modoEdicao()) {
+                <small class="form-text text-muted">
+                  Preencha apenas se deseja alterar a senha
+                </small>
+              }
+            </div>
+            
+            <!-- Perfis -->
+            <div class="col-12">
+              <label class="form-label">
+                Perfil de Acesso <span class="text-danger">*</span>
+              </label>
+              <div class="roles-container">
+                @for (role of roles; track role.value) {
+                  <div class="form-check">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      [id]="'role_' + role.value"
+                      [value]="role.value"
+                      [checked]="usuarioForm.get('roles')?.value?.includes(role.value)"
+                      (change)="onRoleChange($event, role.value)"
+                    />
+                    <label class="form-check-label" [for]="'role_' + role.value">
+                      {{ role.label }}
+                    </label>
+                  </div>
+                }
+              </div>
+              @if (isFieldInvalid('roles')) {
+                <div class="text-danger small mt-1">
+                  Selecione pelo menos um perfil
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="fecharModal()"
+            [disabled]="isSubmitting()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="isSubmitting()"
+          >
+            @if (isSubmitting()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+              Salvando...
+            } @else {
+              <i class="bi bi-check-circle me-2"></i>
+              Salvar
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

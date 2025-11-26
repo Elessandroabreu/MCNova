@@ -1,0 +1,138 @@
+.faturamento-page {
+  .page-header {
+    margin-bottom: 2rem;
+    
+    h2 {
+      color: var(--primary-color);
+      margin-bottom: 0.25rem;
+      font-weight: 600;
+      
+      i {
+        color: var(--secondary-color);
+      }
+    }
+  }
+  
+  // Cards de Estatísticas
+  .stat-card {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+    
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    }
+    
+    .stat-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.75rem;
+      flex-shrink: 0;
+      color: white;
+    }
+    
+    .stat-content {
+      flex: 1;
+      
+      h6 {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      h3 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin: 0;
+      }
+    }
+    
+    &.hoje {
+      border-left-color: #28a745;
+      
+      .stat-icon {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+      }
+    }
+    
+    &.periodo {
+      border-left-color: var(--primary-color);
+      
+      .stat-icon {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--sidebar-hover) 100%);
+      }
+    }
+  }
+  
+  .filters-bar {
+    margin-bottom: 1.5rem;
+    
+    .card-body {
+      padding: 1.5rem;
+    }
+  }
+  
+  .table {
+    .badge {
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+  }
+  
+  .table-footer {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--content-bg);
+    
+    .total-resumo {
+      strong {
+        font-weight: 700;
+      }
+    }
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    
+    i {
+      font-size: 4rem;
+      color: var(--text-muted);
+      opacity: 0.5;
+      margin-bottom: 1rem;
+    }
+    
+    p {
+      color: var(--text-muted);
+      margin: 0;
+    }
+  }
+}
+
+// Responsividade
+@media (max-width: 768px) {
+  .faturamento-page {
+    .stat-card {
+      .stat-content {
+        h3 {
+          font-size: 1.5rem;
+        }
+      }
+    }
+  }
+}

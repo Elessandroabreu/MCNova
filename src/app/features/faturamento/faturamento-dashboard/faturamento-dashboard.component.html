@@ -1,0 +1,155 @@
+<div class="faturamento-page">
+  <!-- Cabeçalho -->
+  <div class="page-header">
+    <div>
+      <h2>
+        <i class="bi bi-currency-dollar me-2"></i>
+        Faturamento
+      </h2>
+      <p class="text-muted mb-0">Relatório de faturamento e receitas</p>
+    </div>
+  </div>
+  
+  <!-- Cards de Totais -->
+  <div class="row g-4 mb-4">
+    <!-- Faturamento do Dia -->
+    <div class="col-md-6">
+      <div class="stat-card hoje">
+        <div class="stat-icon">
+          <i class="bi bi-calendar-day"></i>
+        </div>
+        <div class="stat-content">
+          <h6>Faturamento Hoje</h6>
+          <h3>{{ formatarMoeda(totalDia()) }}</h3>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Faturamento do Período -->
+    <div class="col-md-6">
+      <div class="stat-card periodo">
+        <div class="stat-icon">
+          <i class="bi bi-calendar-range"></i>
+        </div>
+        <div class="stat-content">
+          <h6>Faturamento do Período</h6>
+          <h3>{{ formatarMoeda(totalPeriodo()) }}</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Filtros -->
+  <div class="filters-bar card">
+    <div class="card-body">
+      <form [formGroup]="filtroForm">
+        <div class="row g-3 align-items-end">
+          <div class="col-md-4">
+            <label for="dataInicio" class="form-label">Data Início</label>
+            <input
+              type="date"
+              class="form-control"
+              id="dataInicio"
+              formControlName="dataInicio"
+            />
+          </div>
+          
+          <div class="col-md-4">
+            <label for="dataFim" class="form-label">Data Fim</label>
+            <input
+              type="date"
+              class="form-control"
+              id="dataFim"
+              formControlName="dataFim"
+            />
+          </div>
+          
+          <div class="col-md-4">
+            <button
+              type="button"
+              class="btn btn-primary w-100"
+              (click)="aplicarFiltro()"
+            >
+              <i class="bi bi-search me-2"></i>
+              Buscar
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Carregando...</span>
+      </div>
+      <p class="text-muted mt-2">Carregando faturamento...</p>
+    </div>
+  } @else {
+    <!-- Tabela de Faturamento -->
+    <div class="card">
+      <div class="card-body p-0">
+        @if (faturamentosFiltrados().length === 0) {
+          <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <p>Nenhum faturamento encontrado no período selecionado</p>
+          </div>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Cliente</th>
+                  <th>Origem</th>
+                  <th>Forma Pagamento</th>
+                  <th>Valor</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (faturamento of faturamentosFiltrados(); track faturamento.cdFaturamento) {
+                  <tr>
+                    <td>
+                      <strong>{{ formatarData(faturamento.dataFaturamento) }}</strong>
+                    </td>
+                    <td>{{ faturamento.cliente?.nmCliente || '-' }}</td>
+                    <td>
+                      @if (faturamento.ordemServico) {
+                        <span class="badge bg-primary">Ordem de Serviço</span>
+                      } @else if (faturamento.venda) {
+                        <span class="badge bg-success">Venda</span>
+                      } @else {
+                        <span class="badge bg-secondary">Outro</span>
+                      }
+                    </td>
+                    <td>
+                      <span class="badge bg-info">{{ faturamento.formaPagamento }}</span>
+                    </td>
+                    <td>
+                      <strong class="text-success">{{ formatarMoeda(faturamento.vlTotal) }}</strong>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Rodapé com Total -->
+          <div class="table-footer">
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="text-muted">
+                Total: <strong>{{ faturamentosFiltrados().length }}</strong> registro(s)
+              </span>
+              <div class="total-resumo">
+                <span class="text-muted me-2">Total do Período:</span>
+                <strong class="text-success fs-5">{{ formatarMoeda(totalPeriodo()) }}</strong>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

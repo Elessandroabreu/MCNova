@@ -1,0 +1,176 @@
+<div class="dashboard">
+  <!-- Cabeçalho -->
+  <div class="dashboard-header">
+    <div>
+      <h2>Dashboard</h2>
+      <p class="text-muted mb-0">Visão geral do sistema</p>
+    </div>
+    
+    @if (currentUser) {
+      <div class="user-welcome">
+        <span class="text-muted">Olá,</span>
+        <strong>{{ currentUser.nmUsuario }}</strong>
+      </div>
+    }
+  </div>
+  
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Carregando...</span>
+      </div>
+      <p class="text-muted mt-2">Carregando estatísticas...</p>
+    </div>
+  } @else {
+    <!-- Cards de Estatísticas -->
+    <div class="row g-4 mt-2">
+      <!-- Faturamento do Dia -->
+      @if (isAtendente()) {
+        <div class="col-xl-3 col-md-6">
+          <div class="stat-card faturamento">
+            <div class="stat-icon">
+              <i class="bi bi-currency-dollar"></i>
+            </div>
+            <div class="stat-content">
+              <h6>Faturamento Hoje</h6>
+              <h3>{{ formatarMoeda(stats().faturamentoDia) }}</h3>
+              <a routerLink="/faturamento" class="stat-link">
+                Ver detalhes <i class="bi bi-arrow-right"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      }
+      
+      <!-- Ordens de Serviço Abertas -->
+      <div class="col-xl-3 col-md-6">
+        <div class="stat-card ordens">
+          <div class="stat-icon">
+            <i class="bi bi-file-earmark-text"></i>
+          </div>
+          <div class="stat-content">
+            <h6>Ordens em Andamento</h6>
+            <h3>{{ stats().ordensAbertas }}</h3>
+            <a routerLink="/ordens-servico" class="stat-link">
+              Gerenciar <i class="bi bi-arrow-right"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Clientes Ativos -->
+      @if (isAtendente()) {
+        <div class="col-xl-3 col-md-6">
+          <div class="stat-card clientes">
+            <div class="stat-icon">
+              <i class="bi bi-people"></i>
+            </div>
+            <div class="stat-content">
+              <h6>Clientes Ativos</h6>
+              <h3>{{ stats().clientesAtivos }}</h3>
+              <a routerLink="/clientes" class="stat-link">
+                Ver todos <i class="bi bi-arrow-right"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      }
+      
+      <!-- Produtos com Estoque Baixo -->
+      <div class="col-xl-3 col-md-6">
+        <div class="stat-card estoque" [class.alert-card]="stats().produtosEstoqueBaixo > 0">
+          <div class="stat-icon">
+            <i class="bi bi-box-seam"></i>
+          </div>
+          <div class="stat-content">
+            <h6>Estoque Baixo</h6>
+            <h3>{{ stats().produtosEstoqueBaixo }}</h3>
+            @if (stats().produtosEstoqueBaixo > 0) {
+              <a routerLink="/produtos" class="stat-link text-danger">
+                <i class="bi bi-exclamation-triangle"></i> Verificar estoque
+              </a>
+            } @else {
+              <span class="text-success">
+                <i class="bi bi-check-circle"></i> Tudo OK
+              </span>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Ações Rápidas -->
+    <div class="quick-actions mt-5">
+      <h4 class="mb-4">Ações Rápidas</h4>
+      
+      <div class="row g-3">
+        <!-- Nova Ordem de Serviço -->
+        @if (isAtendente()) {
+          <div class="col-lg-3 col-md-4 col-sm-6">
+            <a routerLink="/ordens-servico" class="action-card">
+              <div class="action-icon primary">
+                <i class="bi bi-plus-circle"></i>
+              </div>
+              <span>Nova Ordem de Serviço</span>
+            </a>
+          </div>
+        }
+        
+        <!-- Novo Cliente -->
+        @if (isAtendente()) {
+          <div class="col-lg-3 col-md-4 col-sm-6">
+            <a routerLink="/clientes" class="action-card">
+              <div class="action-icon success">
+                <i class="bi bi-person-plus"></i>
+              </div>
+              <span>Cadastrar Cliente</span>
+            </a>
+          </div>
+        }
+        
+        <!-- Nova Venda -->
+        @if (isAtendente()) {
+          <div class="col-lg-3 col-md-4 col-sm-6">
+            <a routerLink="/vendas" class="action-card">
+              <div class="action-icon warning">
+                <i class="bi bi-cart-plus"></i>
+              </div>
+              <span>Registrar Venda</span>
+            </a>
+          </div>
+        }
+        
+        <!-- Agendar Serviço -->
+        <div class="col-lg-3 col-md-4 col-sm-6">
+          <a routerLink="/agendamentos" class="action-card">
+            <div class="action-icon info">
+              <i class="bi bi-calendar-plus"></i>
+            </div>
+            <span>Novo Agendamento</span>
+          </a>
+        </div>
+        
+        <!-- Ver Agenda -->
+        <div class="col-lg-3 col-md-4 col-sm-6">
+          <a routerLink="/agendamentos" class="action-card">
+            <div class="action-icon secondary">
+              <i class="bi bi-calendar3"></i>
+            </div>
+            <span>Ver Agenda</span>
+          </a>
+        </div>
+        
+        <!-- Estoque -->
+        <div class="col-lg-3 col-md-4 col-sm-6">
+          <a routerLink="/produtos" class="action-card">
+            <div class="action-icon dark">
+              <i class="bi bi-box-seam"></i>
+            </div>
+            <span>Gerenciar Estoque</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  }
+</div>

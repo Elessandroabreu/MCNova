@@ -1,0 +1,411 @@
+<div class="ordens-page">
+  <!-- Cabeçalho -->
+  <div class="page-header">
+    <div>
+      <h2>
+        <i class="bi bi-file-earmark-text me-2"></i>
+        Ordens de Serviço
+      </h2>
+      <p class="text-muted mb-0">Gerenciamento de ordens de serviço e orçamentos</p>
+    </div>
+    
+    <button class="btn btn-primary" (click)="abrirModalNovo()">
+      <i class="bi bi-plus-circle me-2"></i>
+      Nova Ordem
+    </button>
+  </div>
+  
+  <!-- Filtros de Status -->
+  <div class="filters-bar card">
+    <div class="card-body">
+      <div class="status-filters">
+        @for (status of statusOptions; track status.value) {
+          <button
+            type="button"
+            class="btn btn-sm"
+            [class]="'btn-' + status.class"
+            [class.active]="filtroStatus() === status.value"
+            (click)="alterarFiltroStatus(status.value)"
+          >
+            {{ status.label }}
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+  
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Carregando...</span>
+      </div>
+      <p class="text-muted mt-2">Carregando ordens...</p>
+    </div>
+  } @else {
+    <!-- Tabela de Ordens -->
+    <div class="card">
+      <div class="card-body p-0">
+        @if (ordensFiltradas().length === 0) {
+          <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <p>Nenhuma ordem encontrada</p>
+          </div>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Cliente</th>
+                  <th>Veículo</th>
+                  <th>Tipo</th>
+                  <th>Status</th>
+                  <th>Total</th>
+                  <th class="text-center">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (ordem of ordensFiltradas(); track ordem.cdOrdemServico) {
+                  <tr>
+                    <td>
+                      <small>{{ formatarDataHora(ordem.dataAbertura) }}</small>
+                    </td>
+                    <td>{{ ordem.cliente?.nmCliente || '-' }}</td>
+                    <td>
+                      <span class="placa">{{ ordem.veiculo?.placa || '-' }}</span>
+                      <br>
+                      <small class="text-muted">{{ ordem.veiculo?.modelo || '-' }}</small>
+                    </td>
+                    <td>
+                      @if (ordem.tipoServico === 'ORCAMENTO') {
+                        <span class="badge bg-info">Orçamento</span>
+                      } @else {
+                        <span class="badge bg-primary">OS</span>
+                      }
+                    </td>
+                    <td>
+                      <span class="badge" [ngClass]="getStatusClass(ordem.status)">
+                        {{ getStatusLabel(ordem.status) }}
+                      </span>
+                    </td>
+                    <td>
+                      <strong class="text-success">{{ formatarMoeda(ordem.vlTotal) }}</strong>
+                    </td>
+                    <td class="text-center">
+                      <div class="btn-group btn-group-sm">
+                        @if (ordem.tipoServico === 'ORCAMENTO' && ordem.status === 'AGUARDANDO') {
+                          <button
+                            class="btn btn-outline-success"
+                            (click)="aprovarOrcamento(ordem.cdOrdemServico)"
+                            title="Aprovar Orçamento"
+                          >
+                            <i class="bi bi-check-circle"></i>
+                          </button>
+                        }
+                        
+                        @if (ordem.status === 'EM_ANDAMENTO') {
+                          <button
+                            class="btn btn-outline-success"
+                            (click)="concluirOrdem(ordem)"
+                            title="Concluir"
+                          >
+                            <i class="bi bi-check2-all"></i>
+                          </button>
+                        }
+                        
+                        @if (ordem.status !== 'CONCLUIDA' && ordem.status !== 'CANCELADA') {
+                          <button
+                            class="btn btn-outline-danger"
+                            (click)="cancelarOrdem(ordem)"
+                            title="Cancelar"
+                          >
+                            <i class="bi bi-x-circle"></i>
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Rodapé com Total -->
+          <div class="table-footer">
+            <span class="text-muted">
+              Total: <strong>{{ ordensFiltradas().length }}</strong> ordem(ns)
+            </span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
+
+<!-- Modal de Ordem -->
+<div class="modal fade" #ordemModal tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-file-earmark-plus me-2"></i>
+          Nova Ordem de Serviço
+        </h5>
+        <button type="button" class="btn-close" (click)="fecharModal()"></button>
+      </div>
+      
+      <form [formGroup]="ordemForm" (ngSubmit)="salvar()">
+        <div class="modal-body">
+          <div class="row g-3">
+            <!-- Informações Básicas -->
+            <div class="col-12">
+              <h6 class="section-title">
+                <i class="bi bi-info-circle me-2"></i>
+                Informações Básicas
+              </h6>
+            </div>
+            
+            <div class="col-md-4">
+              <label for="tipoServico" class="form-label">
+                Tipo <span class="text-danger">*</span>
+              </label>
+              <select
+                class="form-select"
+                id="tipoServico"
+                formControlName="tipoServico"
+              >
+                @for (tipo of tiposServico; track tipo.value) {
+                  <option [value]="tipo.value">{{ tipo.label }}</option>
+                }
+              </select>
+            </div>
+            
+            <div class="col-md-4">
+              <label for="cdCliente" class="form-label">
+                Cliente <span class="text-danger">*</span>
+              </label>
+              <select
+                class="form-select"
+                id="cdCliente"
+                formControlName="cdCliente"
+              >
+                <option value="">Selecione o cliente</option>
+                @for (cliente of clientes(); track cliente.cdCliente) {
+                  <option [value]="cliente.cdCliente">{{ cliente.nmCliente }}</option>
+                }
+              </select>
+            </div>
+            
+            <div class="col-md-4">
+              <label for="cdVeiculo" class="form-label">
+                Veículo <span class="text-danger">*</span>
+              </label>
+              <select
+                class="form-select"
+                id="cdVeiculo"
+                formControlName="cdVeiculo"
+                [disabled]="!ordemForm.get('cdCliente')?.value"
+              >
+                <option value="">Selecione o veículo</option>
+                @for (veiculo of veiculosCliente(); track veiculo.cdVeiculo) {
+                  <option [value]="veiculo.cdVeiculo">
+                    {{ veiculo.placa }} - {{ veiculo.modelo }}
+                  </option>
+                }
+              </select>
+            </div>
+            
+            <!-- Produtos -->
+            <div class="col-12 mt-4">
+              <h6 class="section-title">
+                <i class="bi bi-box-seam me-2"></i>
+                Produtos
+              </h6>
+            </div>
+            
+            <div class="col-12">
+              <div class="card bg-light">
+                <div class="card-body">
+                  <div class="row g-2">
+                    <div class="col-md-6">
+                      <select
+                        class="form-select"
+                        [(ngModel)]="produtoSelecionado"
+                        [ngModelOptions]="{standalone: true}"
+                      >
+                        <option [ngValue]="null">Selecione um produto</option>
+                        @for (produto of produtos(); track produto.cdProduto) {
+                          <option [ngValue]="produto.cdProduto">
+                            {{ produto.nmProduto }} - {{ formatarMoeda(produto.vlPreco) }} (Est: {{ produto.qtEstoque }})
+                          </option>
+                        }
+                      </select>
+                    </div>
+                    <div class="col-md-3">
+                      <input
+                        type="number"
+                        class="form-control"
+                        placeholder="Quantidade"
+                        min="1"
+                        [(ngModel)]="quantidadeProduto"
+                        [ngModelOptions]="{standalone: true}"
+                      />
+                    </div>
+                    <div class="col-md-3">
+                      <button
+                        type="button"
+                        class="btn btn-success w-100"
+                        (click)="adicionarProduto()"
+                      >
+                        <i class="bi bi-plus-circle me-1"></i>
+                        Adicionar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Serviços -->
+            <div class="col-12 mt-3">
+              <h6 class="section-title">
+                <i class="bi bi-tools me-2"></i>
+                Serviços
+              </h6>
+            </div>
+            
+            <div class="col-12">
+              <div class="card bg-light">
+                <div class="card-body">
+                  <div class="row g-2">
+                    <div class="col-md-9">
+                      <select
+                        class="form-select"
+                        [(ngModel)]="servicoSelecionado"
+                        [ngModelOptions]="{standalone: true}"
+                      >
+                        <option [ngValue]="null">Selecione um serviço</option>
+                        @for (servico of servicos(); track servico.cdServico) {
+                          <option [ngValue]="servico.cdServico">
+                            {{ servico.nmServico }} - {{ formatarMoeda(servico.vlServico) }}
+                          </option>
+                        }
+                      </select>
+                    </div>
+                    <div class="col-md-3">
+                      <button
+                        type="button"
+                        class="btn btn-success w-100"
+                        (click)="adicionarServico()"
+                      >
+                        <i class="bi bi-plus-circle me-1"></i>
+                        Adicionar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Itens Adicionados -->
+            <div class="col-12 mt-3">
+              @if (itens().length > 0) {
+                <div class="table-responsive">
+                  <table class="table table-sm">
+                    <thead>
+                      <tr>
+                        <th>Tipo</th>
+                        <th>Item</th>
+                        <th>Preço Unit.</th>
+                        <th>Qtd</th>
+                        <th>Subtotal</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of itens(); track item.codigo + item.tipo) {
+                        <tr>
+                          <td>
+                            @if (item.tipo === 'produto') {
+                              <span class="badge bg-info">Produto</span>
+                            } @else {
+                              <span class="badge bg-primary">Serviço</span>
+                            }
+                          </td>
+                          <td>{{ item.nome }}</td>
+                          <td>{{ formatarMoeda(item.vlUnitario) }}</td>
+                          <td>{{ item.quantidade }}</td>
+                          <td><strong>{{ formatarMoeda(item.vlTotal) }}</strong></td>
+                          <td class="text-end">
+                            <button
+                              type="button"
+                              class="btn btn-sm btn-outline-danger"
+                              (click)="removerItem(item.tipo, item.codigo)"
+                              title="Remover"
+                            >
+                              <i class="bi bi-trash"></i>
+                            </button>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                    <tfoot>
+                      <tr class="table-primary">
+                        <th colspan="4" class="text-end">TOTAL:</th>
+                        <th colspan="2">
+                          <h5 class="mb-0 text-success">{{ formatarMoeda(calcularTotal()) }}</h5>
+                        </th>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              } @else {
+                <div class="alert alert-info">
+                  <i class="bi bi-info-circle me-2"></i>
+                  Adicione produtos e/ou serviços à ordem
+                </div>
+              }
+            </div>
+            
+            <!-- Observações -->
+            <div class="col-12 mt-3">
+              <label for="observacoes" class="form-label">Observações</label>
+              <textarea
+                class="form-control"
+                id="observacoes"
+                formControlName="observacoes"
+                rows="2"
+                placeholder="Observações sobre o serviço..."
+              ></textarea>
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="fecharModal()"
+            [disabled]="isSubmitting()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="isSubmitting() || itens().length === 0"
+          >
+            @if (isSubmitting()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+              Salvando...
+            } @else {
+              <i class="bi bi-check-circle me-2"></i>
+              Criar Ordem
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

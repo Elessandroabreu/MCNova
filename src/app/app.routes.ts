@@ -1,85 +1,110 @@
-// src/app/app.routes.ts
 import { Routes } from '@angular/router';
-import { Dashboard } from './view/dashboard/dashboard';
-import { Login } from './view/login/login';
-import { NotFound } from './view/not-found/not-found';
-import { OrdensServico } from './view/ordens-servico/ordens-servico';
-import { Agenda } from './view/agenda/agenda';
-import { Clientes } from './view/clientes/clientes';
-import { Estoque } from './view/estoque/estoque';
-import { Orcamento } from './view/orcamento/orcamento';
-import { Usuario } from './view/usuario/usuario';
-import { Mecanico } from './view/mecanico/mecanico';
-import { FaturamentoView } from './view/faturamento/faturamento'; // ✅ ATUALIZADO
-import { Veiculos } from './view/veiculos/veiculos';
-import { Servicos } from './view/servicos/servicos';
-import { Vendas } from './view/vendas/vendas';
-import { AuthCallback } from './view/auth-callback/auth-callback..component';
-import { authGuard } from './shared/guards/auth.guard';
-import { roleGuard } from './shared/guards/role.guard';
+import { authGuard } from './core/guards/auth.guard';
+import { roleGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
-  { path: '', component: Login },
-  { path: 'auth/callback', component: AuthCallback },
-  { 
-    path: 'home', 
-    component: Dashboard,
-    canActivate: [authGuard]
+  // Rota raiz redireciona para dashboard
+  {
+    path: '',
+    redirectTo: 'dashboard',
+    pathMatch: 'full'
   },
-  { 
-    path: 'ordens', 
-    component: OrdensServico,
-    canActivate: [authGuard, roleGuard(['ROLE_ADMIN', 'ROLE_ATENDENTE', 'ROLE_MECANICO'])]
+  
+  // ==================== AUTH ====================
+  {
+    path: 'auth',
+    loadChildren: () => import('./features/auth/auth.routes').then(m => m.AUTH_ROUTES)
   },
-  { 
-    path: 'agenda', 
-    component: Agenda,
-    canActivate: [authGuard, roleGuard(['ROLE_ADMIN', 'ROLE_ATENDENTE'])]
+  
+  // ==================== LAYOUT PRINCIPAL (PROTEGIDO) ====================
+  {
+    path: '',
+    canActivate: [authGuard],
+    loadComponent: () => import('./layout/main-layout/main-layout.component').then(m => m.MainLayoutComponent),
+    children: [
+      // Dashboard
+      {
+        path: 'dashboard',
+        loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent)
+      },
+      
+      // Clientes (ADMIN, ATENDENTE)
+      {
+        path: 'clientes',
+        canActivate: [roleGuard],
+        data: { roles: ['ROLE_ADMIN', 'ROLE_ATENDENTE'] },
+        loadChildren: () => import('./features/clientes/clientes.routes').then(m => m.CLIENTES_ROUTES)
+      },
+      
+      // Veículos (ADMIN, ATENDENTE, MECANICO)
+      {
+        path: 'veiculos',
+        canActivate: [roleGuard],
+        data: { roles: ['ROLE_ADMIN', 'ROLE_ATENDENTE', 'ROLE_MECANICO'] },
+        loadChildren: () => import('./features/veiculos/veiculos.routes').then(m => m.VEICULOS_ROUTES)
+      },
+      
+      // Produtos (ADMIN, ATENDENTE, MECANICO)
+      {
+        path: 'produtos',
+        canActivate: [roleGuard],
+        data: { roles: ['ROLE_ADMIN', 'ROLE_ATENDENTE', 'ROLE_MECANICO'] },
+        loadChildren: () => import('./features/produtos/produtos.routes').then(m => m.PRODUTOS_ROUTES)
+      },
+      
+      // Serviços (ADMIN, ATENDENTE, MECANICO)
+      {
+        path: 'servicos',
+        canActivate: [roleGuard],
+        data: { roles: ['ROLE_ADMIN', 'ROLE_ATENDENTE', 'ROLE_MECANICO'] },
+        loadChildren: () => import('./features/servicos/servicos.routes').then(m => m.SERVICOS_ROUTES)
+      },
+      
+      // Usuários (ADMIN)
+      {
+        path: 'usuarios',
+        canActivate: [roleGuard],
+        data: { roles: ['ROLE_ADMIN'] },
+        loadChildren: () => import('./features/usuarios/usuarios.routes').then(m => m.USUARIOS_ROUTES)
+      },
+      
+      // Ordens de Serviço (ADMIN, ATENDENTE, MECANICO)
+      {
+        path: 'ordens-servico',
+        canActivate: [roleGuard],
+        data: { roles: ['ROLE_ADMIN', 'ROLE_ATENDENTE', 'ROLE_MECANICO'] },
+        loadChildren: () => import('./features/ordens-servico/ordens-servico.routes').then(m => m.ORDENS_SERVICO_ROUTES)
+      },
+      
+      // Agendamentos (ADMIN, ATENDENTE, MECANICO)
+      {
+        path: 'agendamentos',
+        canActivate: [roleGuard],
+        data: { roles: ['ROLE_ADMIN', 'ROLE_ATENDENTE', 'ROLE_MECANICO'] },
+        loadChildren: () => import('./features/agendamentos/agendamentos.routes').then(m => m.AGENDAMENTOS_ROUTES)
+      },
+      
+      // Vendas (ADMIN, ATENDENTE)
+      {
+        path: 'vendas',
+        canActivate: [roleGuard],
+        data: { roles: ['ROLE_ADMIN', 'ROLE_ATENDENTE'] },
+        loadChildren: () => import('./features/vendas/vendas.routes').then(m => m.VENDAS_ROUTES)
+      },
+      
+      // Faturamento (ADMIN, ATENDENTE)
+      {
+        path: 'faturamento',
+        canActivate: [roleGuard],
+        data: { roles: ['ROLE_ADMIN', 'ROLE_ATENDENTE'] },
+        loadChildren: () => import('./features/faturamento/faturamento.routes').then(m => m.FATURAMENTO_ROUTES)
+      }
+    ]
   },
-  { 
-    path: 'clientes', 
-    component: Clientes,
-    canActivate: [authGuard, roleGuard(['ROLE_ADMIN', 'ROLE_ATENDENTE'])]
-  },
-  { 
-    path: 'veiculos', 
-    component: Veiculos,
-    canActivate: [authGuard, roleGuard(['ROLE_ADMIN', 'ROLE_ATENDENTE'])]
-  },
-  { 
-    path: 'estoque', 
-    component: Estoque,
-    canActivate: [authGuard, roleGuard(['ROLE_ADMIN', 'ROLE_ATENDENTE'])]
-  },
-  { 
-    path: 'servicos', 
-    component: Servicos,
-    canActivate: [authGuard, roleGuard(['ROLE_ADMIN', 'ROLE_ATENDENTE'])]
-  },
-  { 
-    path: 'vendas', 
-    component: Vendas,
-    canActivate: [authGuard, roleGuard(['ROLE_ADMIN', 'ROLE_ATENDENTE'])]
-  },
-  { 
-    path: 'orcamento', 
-    component: Orcamento,
-    canActivate: [authGuard]
-  },
-  { 
-    path: 'usuario', 
-    component: Usuario,
-    canActivate: [authGuard, roleGuard(['ROLE_ADMIN'])]
-  },
-  { 
-    path: 'mecanico', 
-    component: Mecanico,
-    canActivate: [authGuard, roleGuard(['ROLE_ADMIN', 'ROLE_ATENDENTE'])]
-  },
-  { 
-    path: 'faturamento', 
-    component: FaturamentoView, // ✅ ATUALIZADO
-    canActivate: [authGuard, roleGuard(['ROLE_ADMIN', 'ROLE_ATENDENTE'])]
-  },
-  { path: '**', component: NotFound },
+  
+  // Rota 404
+  {
+    path: '**',
+    redirectTo: 'dashboard'
+  }
 ];

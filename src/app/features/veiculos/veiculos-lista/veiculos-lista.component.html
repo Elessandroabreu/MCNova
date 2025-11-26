@@ -1,0 +1,296 @@
+<div class="veiculos-page">
+  <!-- Cabeçalho -->
+  <div class="page-header">
+    <div>
+      <h2>
+        <i class="bi bi-car-front me-2"></i>
+        Veículos
+      </h2>
+      <p class="text-muted mb-0">Gerenciamento de veículos cadastrados</p>
+    </div>
+    
+    <button class="btn btn-primary" (click)="abrirModalNovo()">
+      <i class="bi bi-plus-circle me-2"></i>
+      Novo Veículo
+    </button>
+  </div>
+  
+  <!-- Barra de Pesquisa -->
+  <div class="search-bar card">
+    <div class="card-body">
+      <div class="input-group">
+        <span class="input-group-text">
+          <i class="bi bi-search"></i>
+        </span>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Buscar por placa, modelo, marca ou cliente..."
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="aplicarFiltro()"
+        />
+      </div>
+    </div>
+  </div>
+  
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Carregando...</span>
+      </div>
+      <p class="text-muted mt-2">Carregando veículos...</p>
+    </div>
+  } @else {
+    <!-- Tabela de Veículos -->
+    <div class="card">
+      <div class="card-body p-0">
+        @if (veiculosFiltrados().length === 0) {
+          <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <p>Nenhum veículo encontrado</p>
+          </div>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>Placa</th>
+                  <th>Modelo</th>
+                  <th>Marca</th>
+                  <th>Ano</th>
+                  <th>Cor</th>
+                  <th>Cliente</th>
+                  <th>Cadastro</th>
+                  <th class="text-center">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (veiculo of veiculosFiltrados(); track veiculo.cdVeiculo) {
+                  <tr>
+                    <td>
+                      <strong class="placa">{{ veiculo.placa }}</strong>
+                    </td>
+                    <td>{{ veiculo.modelo }}</td>
+                    <td>{{ veiculo.marca || '-' }}</td>
+                    <td>{{ veiculo.ano || '-' }}</td>
+                    <td>
+                      @if (veiculo.cor) {
+                        <span class="badge bg-secondary">{{ veiculo.cor }}</span>
+                      } @else {
+                        -
+                      }
+                    </td>
+                    <td>
+                      <small>{{ veiculo.cliente?.nmCliente || '-' }}</small>
+                    </td>
+                    <td>
+                      <small class="text-muted">{{ formatarData(veiculo.dataCadastro) }}</small>
+                    </td>
+                    <td class="text-center">
+                      <div class="btn-group btn-group-sm">
+                        <button
+                          class="btn btn-outline-primary"
+                          (click)="abrirModalEditar(veiculo)"
+                          title="Editar"
+                        >
+                          <i class="bi bi-pencil"></i>
+                        </button>
+                        <button
+                          class="btn btn-outline-danger"
+                          (click)="confirmarExclusao(veiculo)"
+                          title="Excluir"
+                        >
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Rodapé com Total -->
+          <div class="table-footer">
+            <span class="text-muted">
+              Total: <strong>{{ veiculosFiltrados().length }}</strong> veículo(s)
+            </span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
+
+<!-- Modal de Veículo -->
+<div class="modal fade" #veiculoModal tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          @if (modoEdicao()) {
+            <i class="bi bi-pencil me-2"></i>
+            Editar Veículo
+          } @else {
+            <i class="bi bi-plus-circle me-2"></i>
+            Novo Veículo
+          }
+        </h5>
+        <button type="button" class="btn-close" (click)="fecharModal()"></button>
+      </div>
+      
+      <form [formGroup]="veiculoForm" (ngSubmit)="salvar()">
+        <div class="modal-body">
+          <div class="row g-3">
+            <!-- Cliente -->
+            <div class="col-md-12">
+              <label for="cdCliente" class="form-label">
+                Cliente <span class="text-danger">*</span>
+              </label>
+              <select
+                class="form-select"
+                id="cdCliente"
+                formControlName="cdCliente"
+                [class.is-invalid]="isFieldInvalid('cdCliente')"
+              >
+                <option value="">Selecione o cliente</option>
+                @for (cliente of clientes(); track cliente.cdCliente) {
+                  <option [value]="cliente.cdCliente">{{ cliente.nmCliente }}</option>
+                }
+              </select>
+              @if (isFieldInvalid('cdCliente')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError('cdCliente') }}
+                </div>
+              }
+            </div>
+            
+            <!-- Placa -->
+            <div class="col-md-6">
+              <label for="placa" class="form-label">
+                Placa <span class="text-danger">*</span>
+              </label>
+              <input
+                type="text"
+                class="form-control text-uppercase"
+                id="placa"
+                formControlName="placa"
+                placeholder="ABC-1234 ou ABC1D23"
+                maxlength="8"
+                (input)="formatarPlacaInput($event)"
+                [class.is-invalid]="isFieldInvalid('placa')"
+              />
+              @if (isFieldInvalid('placa')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError('placa') }}
+                </div>
+              }
+              <small class="form-text text-muted">
+                Formato antigo (ABC-1234) ou Mercosul (ABC1D23)
+              </small>
+            </div>
+            
+            <!-- Ano -->
+            <div class="col-md-6">
+              <label for="ano" class="form-label">Ano</label>
+              <input
+                type="number"
+                class="form-control"
+                id="ano"
+                formControlName="ano"
+                placeholder="2024"
+                [class.is-invalid]="isFieldInvalid('ano')"
+              />
+              @if (isFieldInvalid('ano')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError('ano') }}
+                </div>
+              }
+            </div>
+            
+            <!-- Modelo -->
+            <div class="col-md-12">
+              <label for="modelo" class="form-label">
+                Modelo <span class="text-danger">*</span>
+              </label>
+              <input
+                type="text"
+                class="form-control"
+                id="modelo"
+                formControlName="modelo"
+                placeholder="Ex: Gol 1.0"
+                [class.is-invalid]="isFieldInvalid('modelo')"
+              />
+              @if (isFieldInvalid('modelo')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError('modelo') }}
+                </div>
+              }
+            </div>
+            
+            <!-- Marca -->
+            <div class="col-md-6">
+              <label for="marca" class="form-label">Marca</label>
+              <input
+                type="text"
+                class="form-control"
+                id="marca"
+                formControlName="marca"
+                placeholder="Ex: Volkswagen"
+                [class.is-invalid]="isFieldInvalid('marca')"
+              />
+              @if (isFieldInvalid('marca')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError('marca') }}
+                </div>
+              }
+            </div>
+            
+            <!-- Cor -->
+            <div class="col-md-6">
+              <label for="cor" class="form-label">Cor</label>
+              <input
+                type="text"
+                class="form-control"
+                id="cor"
+                formControlName="cor"
+                placeholder="Ex: Preto"
+                [class.is-invalid]="isFieldInvalid('cor')"
+              />
+              @if (isFieldInvalid('cor')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError('cor') }}
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="fecharModal()"
+            [disabled]="isSubmitting()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="isSubmitting()"
+          >
+            @if (isSubmitting()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+              Salvando...
+            } @else {
+              <i class="bi bi-check-circle me-2"></i>
+              Salvar
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
