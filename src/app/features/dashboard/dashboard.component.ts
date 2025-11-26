@@ -8,6 +8,7 @@ import { OrdemServicoService } from '../../core/services/ordem-servico.service';
 import { ProdutoService } from '../../core/services/produto.service';
 import { AuthService } from '../../core/services/auth.service';
 import { StatusOrdemServico } from '../../core/models';
+import { Produto } from '../../core/models';
 
 interface DashboardStats {
   faturamentoDia: number;
@@ -104,19 +105,16 @@ export class DashboardComponent implements OnInit {
     });
   }
   
-  private carregarProdutosEstoqueBaixo(): Promise<void> {
-    return new Promise((resolve) => {
-      this.produtoService.listarEstoqueBaixo().subscribe({
-        next: (produtos) => {
-          this.stats.update(s => ({ ...s, produtosEstoqueBaixo: produtos.length }));
-          resolve();
-        },
-        error: () => {
-          resolve();
-        }
-      });
-    });
-  }
+  carregarProdutosEstoqueBaixo(): void {
+  this.produtoService.buscarEstoqueBaixo().subscribe({
+    next: (produtos: Produto[]) => { // ✅ Tipagem correta
+      this.produtosEstoqueBaixo = produtos;
+    },
+    error: (err) => {
+      console.error('Erro ao carregar produtos com estoque baixo:', err);
+    }
+  });
+}
   
   formatarMoeda(valor: number): string {
     return new Intl.NumberFormat('pt-BR', {

@@ -4,7 +4,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Produto, ProdutoRequest } from '../models/produto.model';
+import { Produto, ProdutoRequest } from '../models'; // ✅ Importar de models/index
 
 @Injectable({
   providedIn: 'root'
@@ -16,6 +16,10 @@ export class ProdutoService {
 
   listar(): Observable<Produto[]> {
     return this.http.get<Produto[]>(this.apiUrl);
+  }
+
+  listarAtivos(): Observable<Produto[]> {
+    return this.http.get<Produto[]>(`${this.apiUrl}/ativos`);
   }
 
   buscarPorId(id: number): Observable<Produto> {

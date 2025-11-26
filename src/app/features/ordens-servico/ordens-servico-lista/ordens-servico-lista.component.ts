@@ -165,17 +165,17 @@ export class OrdensServicoListaComponent implements OnInit {
     });
   }
   
-  carregarProdutos(): Promise<void> {
-    return new Promise((resolve) => {
-      this.produtoService.listarAtivos().subscribe({
-        next: (produtos) => {
-          this.produtos.set(produtos);
-          resolve();
-        },
-        error: () => resolve()
-      });
+carregarProdutos(): Promise<void> {
+  return new Promise((resolve) => {
+    this.produtoService.listarAtivos().subscribe({ // ✅ Agora existe
+      next: (produtos: Produto[]) => { // ✅ Tipagem correta
+        this.produtos.set(produtos);
+        resolve();
+      },
+      error: () => resolve()
     });
-  }
+  });
+}
   
   carregarServicos(): Promise<void> {
     return new Promise((resolve) => {
@@ -233,8 +233,8 @@ export class OrdensServicoListaComponent implements OnInit {
     const produto = this.produtos().find(p => p.cdProduto === cdProduto);
     if (!produto) return;
     
-    if (produto.qtEstoque < quantidade) {
-      alert(`Estoque insuficiente! Disponível: ${produto.qtEstoque}`);
+    if (produto.qtdEstoque < quantidade) {
+      alert(`Estoque insuficiente! Disponível: ${produto.qtdEstoque}`);
       return;
     }
     
@@ -255,8 +255,8 @@ export class OrdensServicoListaComponent implements OnInit {
         codigo: produto.cdProduto,
         nome: produto.nmProduto,
         quantidade: quantidade,
-        vlUnitario: produto.vlPreco,
-        vlTotal: quantidade * produto.vlPreco
+        vlUnitario: produto.vlVenda,
+        vlTotal: quantidade * produto.vlVenda
       };
       this.itens.set([...this.itens(), novoItem]);
     }

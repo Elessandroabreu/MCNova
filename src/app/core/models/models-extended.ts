@@ -1,3 +1,5 @@
+// src/app/core/models/models-extended.ts
+
 import { FormaPagamento, StatusAgendamento, StatusOrdemServico, TipoServico } from './enums';
 
 // ==================== PRODUTO ====================
@@ -8,26 +10,20 @@ export interface Produto {
   categoria?: string;
   vlCusto: number;
   vlVenda: number;
-  vlPreco: number; // Alias para vlVenda (compatibilidade)
   qtdEstoque: number;
-  qtEstoque: number; // Alias para qtdEstoque (compatibilidade)
   qtdMinimo: number;
-  qtEstoqueMinimo: number; // Alias para qtdMinimo (compatibilidade)
   ativo: boolean;
   dataCadastro: string;
 }
 
 export interface ProdutoRequest {
   nmProduto: string;
-  dsProduto?: string;
-  categoria?: string;
-  vlCusto?: number;
-  vlVenda?: number;
-  vlPreco: number;
-  qtdEstoque?: number;
-  qtEstoque: number;
-  qtdMinimo?: number;
-  qtEstoqueMinimo?: number;
+  dsProduto?: string | null;
+  categoria?: string | null;
+  vlCusto: number;
+  vlVenda: number;
+  qtdEstoque: number;
+  qtdMinimo: number;
 }
 
 // ==================== SERVICO ====================

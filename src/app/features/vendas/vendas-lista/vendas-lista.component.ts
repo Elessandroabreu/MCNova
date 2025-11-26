@@ -115,17 +115,19 @@ export class VendasListaComponent implements OnInit {
     });
   }
   
-  carregarProdutos(): Promise<void> {
-    return new Promise((resolve) => {
-      this.produtoService.listarAtivos().subscribe({
-        next: (produtos) => {
-          this.produtos.set(produtos);
-          resolve();
-        },
-        error: () => resolve()
-      });
+// No método carregarProdutos()
+
+carregarProdutos(): Promise<void> {
+  return new Promise((resolve) => {
+    this.produtoService.listarAtivos().subscribe({ // ✅ Agora existe
+      next: (produtos: Produto[]) => { // ✅ Tipagem correta
+        this.produtos.set(produtos);
+        resolve();
+      },
+      error: () => resolve()
     });
-  }
+  });
+}
   
   aplicarFiltro(): void {
     const termo = this.searchTerm().toLowerCase();
@@ -172,10 +174,11 @@ export class VendasListaComponent implements OnInit {
       alert('Produto não encontrado');
       return;
     }
-    
+
+        
     // Verifica estoque
-    if (produto.qtEstoque < quantidade) {
-      alert(`Estoque insuficiente! Disponível: ${produto.qtEstoque}`);
+    if (produto.qtdEstoque < quantidade) {
+      alert(`Estoque insuficiente! Disponível: ${produto.qtdEstoque}`);
       return;
     }
     
@@ -203,8 +206,8 @@ export class VendasListaComponent implements OnInit {
         cdProduto: produto.cdProduto,
         produto: produto,
         quantidade: quantidade,
-        vlUnitario: produto.vlPreco,
-        vlTotal: quantidade * produto.vlPreco
+        vlUnitario: produto.vlVenda,
+        vlTotal: quantidade * produto.vlVenda
       };
       
       this.itensVenda.set([...this.itensVenda(), novoItem]);

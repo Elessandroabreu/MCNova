@@ -162,7 +162,7 @@
                         <option [ngValue]="null">Selecione um produto</option>
                         @for (produto of produtos(); track produto.cdProduto) {
                           <option [ngValue]="produto.cdProduto">
-                            {{ produto.nmProduto }} - {{ formatarMoeda(produto.vlPreco) }} (Estoque: {{ produto.qtEstoque }})
+                            {{ produto.nmProduto }} - {{ formatarMoeda(produto.vlVenda) }} (Estoque: {{ produto.qtdEstoque }})
                           </option>
                         }
                       </select>
