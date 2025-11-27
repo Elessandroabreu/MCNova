@@ -97,7 +97,7 @@
                         @if (ordem.tipoServico === 'ORCAMENTO' && ordem.status === 'AGUARDANDO') {
                           <button
                             class="btn btn-outline-success"
-                            (click)="aprovarOrcamento(ordem.cdOrdemServico)"
+                            (click)="abrirModalAprovar(ordem)"
                             title="Aprovar Orçamento"
                           >
                             <i class="bi bi-check-circle"></i>
@@ -166,7 +166,7 @@
               </h6>
             </div>
             
-            <div class="col-md-4">
+            <div class="col-md-3">
               <label for="tipoServico" class="form-label">
                 Tipo <span class="text-danger">*</span>
               </label>
@@ -181,7 +181,7 @@
               </select>
             </div>
             
-            <div class="col-md-4">
+            <div class="col-md-3">
               <label for="cdCliente" class="form-label">
                 Cliente <span class="text-danger">*</span>
               </label>
@@ -197,7 +197,7 @@
               </select>
             </div>
             
-            <div class="col-md-4">
+            <div class="col-md-3">
               <label for="cdVeiculo" class="form-label">
                 Veículo <span class="text-danger">*</span>
               </label>
@@ -214,6 +214,42 @@
                   </option>
                 }
               </select>
+            </div>
+
+            <div class="col-md-3">
+              <label for="cdMecanico" class="form-label">
+                Mecânico <span class="text-danger">*</span>
+              </label>
+              <select
+                class="form-select"
+                id="cdMecanico"
+                formControlName="cdMecanico"
+              >
+                <option value="">Selecione o mecânico</option>
+                @for (mecanico of mecanicos(); track mecanico.cdUsuario) {
+                  <option [value]="mecanico.cdUsuario">{{ mecanico.nmUsuario }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="col-md-4">
+              <label for="dataAgendamento" class="form-label">
+                Data de Agendamento
+                @if (ordemForm.get('tipoServico')?.value === 'ORDEM_DE_SERVICO') {
+                  <span class="text-danger">*</span>
+                }
+              </label>
+              <input
+                type="date"
+                class="form-control"
+                id="dataAgendamento"
+                formControlName="dataAgendamento"
+              />
+              @if (ordemForm.get('tipoServico')?.value === 'ORCAMENTO') {
+                <small class="form-text text-muted">
+                  Não é necessário para orçamentos
+                </small>
+              }
             </div>
             
             <!-- Produtos -->
@@ -402,6 +438,76 @@
             } @else {
               <i class="bi bi-check-circle me-2"></i>
               Criar Ordem
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Aprovação de Orçamento -->
+<div class="modal fade" #aprovarModal tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-check-circle me-2"></i>
+          Aprovar Orçamento
+        </h5>
+        <button type="button" class="btn-close" (click)="aprovarModalInstance?.hide()"></button>
+      </div>
+      
+      <form [formGroup]="aprovarForm" (ngSubmit)="aprovarOrcamento()">
+        <div class="modal-body">
+          <p class="text-muted mb-3">
+            Ao aprovar este orçamento, ele será transformado em Ordem de Serviço e será criado um agendamento automaticamente.
+          </p>
+          
+          <div class="mb-3">
+            <label for="dataAgendamentoAprovar" class="form-label">
+              Data de Agendamento <span class="text-danger">*</span>
+            </label>
+            <input
+              type="date"
+              class="form-control"
+              id="dataAgendamentoAprovar"
+              formControlName="dataAgendamento"
+            />
+            <small class="form-text text-muted">
+              Um agendamento será criado automaticamente para o mecânico nesta data
+            </small>
+          </div>
+          
+          @if (ordemParaAprovar()) {
+            <div class="alert alert-info">
+              <strong>Cliente:</strong> {{ ordemParaAprovar()?.cliente?.nmCliente }}<br>
+              <strong>Veículo:</strong> {{ ordemParaAprovar()?.veiculo?.placa }}<br>
+              <strong>Total:</strong> {{ formatarMoeda(ordemParaAprovar()!.vlTotal) }}
+            </div>
+          }
+        </div>
+        
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="aprovarModalInstance?.hide()"
+            [disabled]="isSubmitting()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="btn btn-success"
+            [disabled]="isSubmitting()"
+          >
+            @if (isSubmitting()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+              Aprovando...
+            } @else {
+              <i class="bi bi-check-circle me-2"></i>
+              Aprovar Orçamento
             }
           </button>
         </div>

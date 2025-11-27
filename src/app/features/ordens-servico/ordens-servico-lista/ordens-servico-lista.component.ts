@@ -6,8 +6,9 @@ import { ClienteService } from '../../../core/services/cliente.service';
 import { VeiculoService } from '../../../core/services/veiculo.service';
 import { ProdutoService } from '../../../core/services/produto.service';
 import { ServicoService } from '../../../core/services/servico.service';
-import { OrdemServico, OrdemServicoRequest, ItemOrdemServicoRequest, Cliente, Veiculo, Produto, Servico, StatusOrdemServico, TipoServico, FormaPagamento } from '../../../core/models';
-import { formatarDataSimples } from 'src/app/core/utils/formatters.util';
+import { UsuarioService } from '../../../core/services/usuario.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { OrdemServico, OrdemServicoRequest, ItemOrdemServicoRequest, Cliente, Veiculo, Produto, Servico, Usuario, StatusOrdemServico, TipoServico, FormaPagamento } from '../../../core/models';
 import { formatarData } from '../../../core/utils/formatters.util';
 
 declare var bootstrap: any;
@@ -34,10 +35,14 @@ export class OrdensServicoListaComponent implements OnInit {
   private veiculoService = inject(VeiculoService);
   private produtoService = inject(ProdutoService);
   private servicoService = inject(ServicoService);
+  private usuarioService = inject(UsuarioService);
+  private authService = inject(AuthService);
   private fb = inject(FormBuilder);
   
   @ViewChild('ordemModal') modalElement!: ElementRef;
+  @ViewChild('aprovarModal') aprovarModalElement!: ElementRef;
   private modalInstance: any;
+  public aprovarModalInstance: any;
   
   ordens = signal<OrdemServico[]>([]);
   ordensFiltradas = signal<OrdemServico[]>([]);
@@ -46,16 +51,20 @@ export class OrdensServicoListaComponent implements OnInit {
   veiculosCliente = signal<Veiculo[]>([]);
   produtos = signal<Produto[]>([]);
   servicos = signal<Servico[]>([]);
+  mecanicos = signal<Usuario[]>([]);
   
   isLoading = signal(false);
   isSubmitting = signal(false);
   
   ordemForm!: FormGroup;
+  aprovarForm!: FormGroup;
   itens = signal<ItemLocal[]>([]);
   
   produtoSelecionado = signal<number | null>(null);
   quantidadeProduto = signal<number>(1);
   servicoSelecionado = signal<number | null>(null);
+  
+  ordemParaAprovar = signal<OrdemServico | null>(null);
   
   filtroStatus = signal<StatusOrdemServico | 'TODOS'>('TODOS');
   
@@ -80,7 +89,7 @@ export class OrdensServicoListaComponent implements OnInit {
   ];
   
   ngOnInit(): void {
-    this.inicializarForm();
+    this.inicializarForms();
     this.carregarDados();
   }
   
@@ -88,22 +97,48 @@ export class OrdensServicoListaComponent implements OnInit {
     if (this.modalElement) {
       this.modalInstance = new bootstrap.Modal(this.modalElement.nativeElement);
     }
+    if (this.aprovarModalElement) {
+      this.aprovarModalInstance = new bootstrap.Modal(this.aprovarModalElement.nativeElement);
+    }
   }
   
-  inicializarForm(): void {
+  inicializarForms(): void {
+    // Form principal de ordem/orçamento
     this.ordemForm = this.fb.group({
       cdCliente: ['', [Validators.required]],
       cdVeiculo: ['', [Validators.required]],
+      cdMecanico: ['', [Validators.required]],
       tipoServico: [TipoServico.ORDEM_DE_SERVICO, [Validators.required]],
-      observacoes: ['']
+      dataAgendamento: [''], // ✅ Opcional inicialmente
+      observacoes: [''],
+      diagnostico: ['']
     });
     
+    // ✅ Form para aprovação de orçamento
+    this.aprovarForm = this.fb.group({
+      dataAgendamento: ['', [Validators.required]]
+    });
+    
+    // Listener para carregar veículos quando selecionar cliente
     this.ordemForm.get('cdCliente')?.valueChanges.subscribe(cdCliente => {
       if (cdCliente) {
         this.carregarVeiculosCliente(cdCliente);
       } else {
         this.veiculosCliente.set([]);
       }
+    });
+    
+    // ✅ Listener para tipo de serviço (OS exige data, orçamento não)
+    this.ordemForm.get('tipoServico')?.valueChanges.subscribe(tipo => {
+      const dataControl = this.ordemForm.get('dataAgendamento');
+      
+      if (tipo === TipoServico.ORDEM_DE_SERVICO) {
+        dataControl?.setValidators([Validators.required]);
+      } else {
+        dataControl?.clearValidators();
+      }
+      
+      dataControl?.updateValueAndValidity();
     });
   }
   
@@ -114,7 +149,8 @@ export class OrdensServicoListaComponent implements OnInit {
       this.carregarOrdens(),
       this.carregarClientes(),
       this.carregarProdutos(),
-      this.carregarServicos()
+      this.carregarServicos(),
+      this.carregarMecanicos()
     ]).finally(() => {
       this.isLoading.set(false);
     });
@@ -122,17 +158,17 @@ export class OrdensServicoListaComponent implements OnInit {
   
   carregarOrdens(): Promise<void> {
     return new Promise((resolve) => {
-      this.ordemServicoService.listarPorStatus(StatusOrdemServico.EM_ANDAMENTO).subscribe({
-        next: (ordens) => {
-          // Carrega todas as ordens, não só em andamento
-          this.ordemServicoService.listarPorStatus(StatusOrdemServico.AGUARDANDO).subscribe({
-            next: (ordensAguardando) => {
-              this.ordens.set([...ordens, ...ordensAguardando]);
+      // Carrega todas as ordens (não concluídas/canceladas)
+      this.ordemServicoService.listarPorStatus(StatusOrdemServico.AGUARDANDO).subscribe({
+        next: (ordensAguardando) => {
+          this.ordemServicoService.listarPorStatus(StatusOrdemServico.EM_ANDAMENTO).subscribe({
+            next: (ordensAndamento) => {
+              this.ordens.set([...ordensAguardando, ...ordensAndamento]);
               this.aplicarFiltro();
               resolve();
             },
             error: () => {
-              this.ordens.set(ordens);
+              this.ordens.set(ordensAguardando);
               this.aplicarFiltro();
               resolve();
             }
@@ -166,23 +202,35 @@ export class OrdensServicoListaComponent implements OnInit {
     });
   }
   
-carregarProdutos(): Promise<void> {
-  return new Promise((resolve) => {
-    this.produtoService.listarAtivos().subscribe({ // ✅ Método correto
-      next: (produtos: Produto[]) => {
-        this.produtos.set(produtos);
-        resolve();
-      },
-      error: () => resolve()
+  carregarProdutos(): Promise<void> {
+    return new Promise((resolve) => {
+      this.produtoService.listarAtivos().subscribe({
+        next: (produtos: Produto[]) => {
+          this.produtos.set(produtos);
+          resolve();
+        },
+        error: () => resolve()
+      });
     });
-  });
-}
+  }
   
   carregarServicos(): Promise<void> {
     return new Promise((resolve) => {
       this.servicoService.listarAtivos().subscribe({
         next: (servicos) => {
           this.servicos.set(servicos);
+          resolve();
+        },
+        error: () => resolve()
+      });
+    });
+  }
+  
+  carregarMecanicos(): Promise<void> {
+    return new Promise((resolve) => {
+      this.usuarioService.listarMecanicos().subscribe({
+        next: (mecanicos) => {
+          this.mecanicos.set(mecanicos);
           resolve();
         },
         error: () => resolve()
@@ -209,6 +257,13 @@ carregarProdutos(): Promise<void> {
     this.ordemForm.reset({
       tipoServico: TipoServico.ORDEM_DE_SERVICO
     });
+    
+    // ✅ Data padrão: hoje (se for OS)
+    const hoje = new Date().toISOString().split('T')[0];
+    this.ordemForm.patchValue({
+      dataAgendamento: hoje
+    });
+    
     this.itens.set([]);
     this.produtoSelecionado.set(null);
     this.servicoSelecionado.set(null);
@@ -330,8 +385,11 @@ carregarProdutos(): Promise<void> {
     const dados: OrdemServicoRequest = {
       cdCliente: formValue.cdCliente,
       cdVeiculo: formValue.cdVeiculo,
+      cdMecanico: formValue.cdMecanico,
       tipoServico: formValue.tipoServico,
+      dataAgendamento: formValue.dataAgendamento || undefined, // ✅ Envia data se preenchida
       observacoes: formValue.observacoes || undefined,
+      diagnostico: formValue.diagnostico || undefined,
       itens: itensRequest
     };
     
@@ -345,24 +403,51 @@ carregarProdutos(): Promise<void> {
       error: (error) => {
         console.error('Erro ao salvar ordem:', error);
         this.isSubmitting.set(false);
-        alert(error.message || 'Erro ao salvar ordem de serviço');
+        alert(error.error?.message || error.message || 'Erro ao salvar ordem de serviço');
       }
     });
   }
   
-  aprovarOrcamento(cdOrdem: number): void {
-    if (confirm('Deseja aprovar este orçamento e transformá-lo em Ordem de Serviço?')) {
-      this.ordemServicoService.aprovarOrcamento(cdOrdem).subscribe({
-        next: () => {
-          this.carregarOrdens();
-          alert('Orçamento aprovado com sucesso!');
-        },
-        error: (error) => {
-          console.error('Erro ao aprovar:', error);
-          alert('Erro ao aprovar orçamento');
-        }
-      });
+  // ✅ NOVO: Abrir modal de aprovação
+  abrirModalAprovar(ordem: OrdemServico): void {
+    this.ordemParaAprovar.set(ordem);
+    
+    // Data padrão: hoje
+    const hoje = new Date().toISOString().split('T')[0];
+    this.aprovarForm.patchValue({
+      dataAgendamento: hoje
+    });
+    
+    this.aprovarModalInstance?.show();
+  }
+  
+  // ✅ ATUALIZADO: Aprovar orçamento com data
+  aprovarOrcamento(): void {
+    if (this.aprovarForm.invalid) {
+      alert('Informe a data de agendamento');
+      return;
     }
+    
+    const ordem = this.ordemParaAprovar();
+    if (!ordem) return;
+    
+    const dataAgendamento = this.aprovarForm.get('dataAgendamento')?.value;
+    
+    this.isSubmitting.set(true);
+    
+    this.ordemServicoService.aprovarOrcamento(ordem.cdOrdemServico, dataAgendamento).subscribe({
+      next: () => {
+        this.isSubmitting.set(false);
+        this.aprovarModalInstance?.hide();
+        this.carregarOrdens();
+        alert('Orçamento aprovado com sucesso! Agendamento criado automaticamente.');
+      },
+      error: (error) => {
+        console.error('Erro ao aprovar:', error);
+        this.isSubmitting.set(false);
+        alert(error.error?.message || 'Erro ao aprovar orçamento');
+      }
+    });
   }
   
   concluirOrdem(ordem: OrdemServico): void {
@@ -391,7 +476,7 @@ carregarProdutos(): Promise<void> {
       },
       error: (error) => {
         console.error('Erro ao concluir:', error);
-        alert('Erro ao concluir ordem');
+        alert(error.error?.message || 'Erro ao concluir ordem');
       }
     });
   }
@@ -401,10 +486,11 @@ carregarProdutos(): Promise<void> {
       this.ordemServicoService.cancelar(ordem.cdOrdemServico).subscribe({
         next: () => {
           this.carregarOrdens();
+          alert('Ordem cancelada com sucesso!');
         },
         error: (error) => {
           console.error('Erro ao cancelar:', error);
-          alert('Erro ao cancelar ordem');
+          alert(error.error?.message || 'Erro ao cancelar ordem');
         }
       });
     }

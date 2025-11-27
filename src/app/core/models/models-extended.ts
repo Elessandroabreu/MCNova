@@ -89,8 +89,11 @@ export interface OrdemServico {
 export interface OrdemServicoRequest {
   cdCliente: number;
   cdVeiculo: number;
-  cdMecanico?: number;
+  cdMecanico: number; // ✅ Agora obrigatório
   tipoServico: TipoServico;
+  dataAgendamento?: string; // ✅ NOVO CAMPO (formato: "2025-01-20")
+  vlMaoObra?: number;
+  desconto?: number;
   observacoes?: string;
   diagnostico?: string;
   itens: ItemOrdemServicoRequest[];

@@ -32,6 +32,11 @@ export class UsuarioService {
     return this.http.get<Usuario[]>(`${this.apiUrl}/mecanicos`);
   }
   
+  // ✅ NOVO: Listar atendentes
+  listarAtendentes(): Observable<Usuario[]> {
+    return this.http.get<Usuario[]>(`${this.apiUrl}/atendentes`);
+  }
+  
   // Atualizar usuario
   atualizar(id: number, data: UsuarioRequest): Observable<Usuario> {
     return this.http.put<Usuario>(`${this.apiUrl}/${id}`, data);
