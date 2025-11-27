@@ -13,28 +13,52 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       let errorMessage = 'Ocorreu um erro desconhecido';
       
       if (error.error instanceof ErrorEvent) {
-        // Erro do lado do cliente
-        errorMessage = `Erro: ${error.error.message}`;
+        // Erro do lado do cliente (rede, etc)
+        errorMessage = `Erro de conexão: ${error.error.message}`;
       } else {
         // Erro do lado do servidor
         switch (error.status) {
+          case 0:
+            // Erro de CORS ou backend offline
+            errorMessage = 'Não foi possível conectar ao servidor. Verifique se o backend está rodando.';
+            break;
+            
           case 401:
             // Não autorizado - faz logout
             authService.logout();
             errorMessage = 'Sessão expirada. Faça login novamente.';
             break;
+            
           case 403:
             // Sem permissão
             errorMessage = 'Você não tem permissão para acessar este recurso.';
             router.navigate(['/dashboard']);
             break;
+            
           case 404:
             errorMessage = 'Recurso não encontrado.';
             break;
-          case 500:
-            errorMessage = 'Erro interno do servidor. Tente novamente mais tarde.';
+            
+          case 400:
+            // Erro de validação - pega mensagem do backend
+            if (error.error?.message) {
+              errorMessage = error.error.message;
+            } else if (error.error?.errors) {
+              // Se tem múltiplos erros de validação
+              const errors = error.error.errors;
+              const firstError = Object.values(errors)[0];
+              errorMessage = `Erro de validação: ${firstError}`;
+            } else {
+              errorMessage = 'Dados inválidos. Verifique os campos.';
+            }
             break;
+            
+          case 500:
+            errorMessage = error.error?.message || 'Erro interno do servidor. Tente novamente mais tarde.';
+            break;
+            
           default:
+            // Tenta pegar mensagem do backend
             if (error.error?.message) {
               errorMessage = error.error.message;
             } else if (error.message) {
@@ -43,10 +67,14 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         }
       }
       
-      // Você pode adicionar um serviço de toast/notification aqui
-      console.error(errorMessage);
+      console.error('Erro HTTP:', {
+        status: error.status,
+        message: errorMessage,
+        error: error
+      });
       
-      return throwError(() => new Error(errorMessage));
+      // Retorna erro com mensagem tratada
+      return throwError(() => ({ message: errorMessage, error }));
     })
   );
 };

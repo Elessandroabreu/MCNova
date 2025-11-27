@@ -1,44 +1,44 @@
 // src/app/core/services/produto.service.ts
-
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Produto, ProdutoRequest } from '../models'; // ✅ Importar de models/index
+import { Produto, ProdutoRequest } from '../models';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProdutoService {
+  private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/produtos`;
-
-  constructor(private http: HttpClient) {}
-
-  listar(): Observable<Produto[]> {
-    return this.http.get<Produto[]>(this.apiUrl);
+  
+  // Criar novo produto
+  criar(data: ProdutoRequest): Observable<Produto> {
+    return this.http.post<Produto>(this.apiUrl, data);
   }
-
-  listarAtivos(): Observable<Produto[]> {
-    return this.http.get<Produto[]>(`${this.apiUrl}/ativos`);
-  }
-
+  
+  // Buscar por ID
   buscarPorId(id: number): Observable<Produto> {
     return this.http.get<Produto>(`${this.apiUrl}/${id}`);
   }
-
-  criar(produto: ProdutoRequest): Observable<Produto> {
-    return this.http.post<Produto>(this.apiUrl, produto);
+  
+  // Listar ativos
+  listarAtivos(): Observable<Produto[]> {
+    return this.http.get<Produto[]>(this.apiUrl);
   }
-
-  atualizar(id: number, produto: ProdutoRequest): Observable<Produto> {
-    return this.http.put<Produto>(`${this.apiUrl}/${id}`, produto);
-  }
-
-  deletar(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
-  }
-
+  
+  // Listar com estoque baixo
   buscarEstoqueBaixo(): Observable<Produto[]> {
     return this.http.get<Produto[]>(`${this.apiUrl}/estoque-baixo`);
+  }
+  
+  // Atualizar produto
+  atualizar(id: number, data: ProdutoRequest): Observable<Produto> {
+    return this.http.put<Produto>(`${this.apiUrl}/${id}`, data);
+  }
+  
+  // Deletar produto
+  deletar(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 }

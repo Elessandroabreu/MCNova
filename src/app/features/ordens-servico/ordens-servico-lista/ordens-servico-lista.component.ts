@@ -7,7 +7,8 @@ import { VeiculoService } from '../../../core/services/veiculo.service';
 import { ProdutoService } from '../../../core/services/produto.service';
 import { ServicoService } from '../../../core/services/servico.service';
 import { OrdemServico, OrdemServicoRequest, ItemOrdemServicoRequest, Cliente, Veiculo, Produto, Servico, StatusOrdemServico, TipoServico, FormaPagamento } from '../../../core/models';
-import { formatarDataHora } from '../../../core/utils/formatters.util';
+import { formatarDataSimples } from 'src/app/core/utils/formatters.util';
+import { formatarData } from '../../../core/utils/formatters.util';
 
 declare var bootstrap: any;
 
@@ -167,8 +168,8 @@ export class OrdensServicoListaComponent implements OnInit {
   
 carregarProdutos(): Promise<void> {
   return new Promise((resolve) => {
-    this.produtoService.listarAtivos().subscribe({ // ✅ Agora existe
-      next: (produtos: Produto[]) => { // ✅ Tipagem correta
+    this.produtoService.listarAtivos().subscribe({ // ✅ Método correto
+      next: (produtos: Produto[]) => {
         this.produtos.set(produtos);
         resolve();
       },
@@ -432,6 +433,6 @@ carregarProdutos(): Promise<void> {
   }
   
   formatarDataHora(data: string): string {
-    return formatarDataHora(data);
+    return formatarData(data);
   }
 }

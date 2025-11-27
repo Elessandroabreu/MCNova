@@ -44,11 +44,12 @@ export class ProdutosListaComponent implements OnInit {
     });
   }
 
+  // ✅ CORRIGIDO
   carregarProdutos(): void {
     this.loading = true;
     this.erro = '';
 
-    this.produtoService.listar().subscribe({
+    this.produtoService.listarAtivos().subscribe({
       next: (data) => {
         this.produtos = data;
         this.loading = false;
@@ -105,7 +106,6 @@ export class ProdutosListaComponent implements OnInit {
       return;
     }
 
-    // Validar se preço de venda é maior que custo
     const vlCusto = Number(this.produtoForm.value.vlCusto);
     const vlVenda = Number(this.produtoForm.value.vlVenda);
     
@@ -117,11 +117,10 @@ export class ProdutosListaComponent implements OnInit {
     this.loading = true;
     this.erro = '';
 
-    // Criar objeto tipado corretamente
     const produtoData: ProdutoRequest = {
       nmProduto: this.produtoForm.value.nmProduto,
-      dsProduto: this.produtoForm.value.dsProduto || null,
-      categoria: this.produtoForm.value.categoria || null,
+      dsProduto: this.produtoForm.value.dsProduto || undefined,
+      categoria: this.produtoForm.value.categoria || undefined,
       vlCusto: vlCusto,
       vlVenda: vlVenda,
       qtdEstoque: Number(this.produtoForm.value.qtdEstoque),

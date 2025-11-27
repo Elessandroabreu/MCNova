@@ -1,3 +1,4 @@
+// src/app/core/services/auth.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -20,7 +21,7 @@ export class AuthService {
   
   constructor() {}
   
-  // ==================== LOGIN ====================
+  // Login com email e senha
   login(credentials: LoginRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${environment.apiUrl}/auth/login`, credentials)
       .pipe(
@@ -28,20 +29,19 @@ export class AuthService {
       );
   }
   
-  // ==================== REGISTER ====================
+  // Registro de novo usuario
   register(data: UsuarioRequest): Observable<Usuario> {
     return this.http.post<Usuario>(`${environment.apiUrl}/auth/register`, data);
   }
   
-  // ==================== GOOGLE LOGIN ====================
+  // Login com Google - redireciona para backend OAuth2
   loginWithGoogle(): void {
     const googleAuthUrl = `${environment.apiUrl.replace('/api', '')}/oauth2/authorization/google`;
     window.location.href = googleAuthUrl;
   }
   
-  // ==================== CALLBACK GOOGLE ====================
+  // Callback do Google - processa token recebido
   handleGoogleCallback(token: string): void {
-    // Busca dados do usuário com o token recebido
     this.http.get<Usuario>(`${environment.apiUrl}/auth/me`, {
       headers: { Authorization: `Bearer ${token}` }
     }).subscribe({
@@ -53,7 +53,8 @@ export class AuthService {
         };
         this.handleAuthSuccess(authResponse);
       },
-      error: () => {
+      error: (error) => {
+        console.error('Erro no callback do Google:', error);
         this.router.navigate(['/auth/login'], { 
           queryParams: { error: 'google_auth_failed' } 
         });
@@ -61,7 +62,7 @@ export class AuthService {
     });
   }
   
-  // ==================== LOGOUT ====================
+  // Logout
   logout(): void {
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
@@ -69,42 +70,41 @@ export class AuthService {
     this.router.navigate(['/auth/login']);
   }
   
-  // ==================== GET CURRENT USER ====================
+  // Obter usuario atual
   getCurrentUser(): Usuario | null {
     return this.currentUserSubject.value;
   }
   
-  // ==================== GET TOKEN ====================
+  // Obter token JWT
   getToken(): string | null {
     return localStorage.getItem(this.TOKEN_KEY);
   }
   
-  // ==================== IS AUTHENTICATED ====================
+  // Verificar se esta autenticado
   isAuthenticated(): boolean {
     return !!this.getToken();
   }
   
-  // ==================== HAS ROLE ====================
+  // Verificar se tem role especifica
   hasRole(role: string): boolean {
     const user = this.getCurrentUser();
     return user?.roles?.includes(role as any) || false;
   }
   
-  // ==================== HAS ANY ROLE ====================
+  // Verificar se tem alguma das roles
   hasAnyRole(roles: string[]): boolean {
     return roles.some(role => this.hasRole(role));
   }
   
-  // ==================== PRIVATE METHODS ====================
+  // Processar sucesso da autenticacao
   private handleAuthSuccess(response: AuthResponse): void {
     localStorage.setItem(this.TOKEN_KEY, response.accessToken);
     localStorage.setItem(this.USER_KEY, JSON.stringify(response.usuario));
     this.currentUserSubject.next(response.usuario);
-    
-    // Redireciona para dashboard
     this.router.navigate(['/dashboard']);
   }
   
+  // Recuperar usuario do localStorage
   private getUserFromStorage(): Usuario | null {
     const userJson = localStorage.getItem(this.USER_KEY);
     return userJson ? JSON.parse(userJson) : null;

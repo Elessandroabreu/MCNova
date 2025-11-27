@@ -48,10 +48,10 @@ export class ClientesListaComponent implements OnInit {
   inicializarForm(): void {
     this.clienteForm = this.fb.group({
       nmCliente: ['', [Validators.required, Validators.maxLength(120)]],
-      nuCPF: ['', [this.cpfValidator]],
-      nuTelefone: ['', [Validators.pattern(/^\(\d{2}\)\s9?\d{4}-\d{4}$/)]],
+      nuCPF: ['', [Validators.required, this.cpfValidator]],
+      nuTelefone: ['', [Validators.required]],
       dsEndereco: ['', [Validators.maxLength(255)]],
-      email: ['', [Validators.email, Validators.maxLength(150)]]
+      email: ['', [Validators.required, Validators.email, Validators.maxLength(150)]]
     });
   }
   

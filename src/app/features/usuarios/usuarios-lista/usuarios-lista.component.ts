@@ -138,14 +138,14 @@ export class UsuariosListaComponent implements OnInit {
     const dados: UsuarioRequest = {
       nmUsuario: formValue.nmUsuario,
       email: formValue.email,
-      senha: formValue.senha || undefined,
+      password: formValue.senha || undefined,
       roles: formValue.roles,
       authProvider: AuthProvider.LOCAL
     };
     
     // Remove senha vazia na edição
-    if (this.modoEdicao() && !dados.senha) {
-      delete dados.senha;
+    if (this.modoEdicao() && !dados.password) {
+      delete dados.password;
     }
     
     const operacao = this.modoEdicao()
