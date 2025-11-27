@@ -34,7 +34,6 @@ export interface Servico {
   nmServico: string;
   dsServico?: string;
   vlServico: number;
-  tmpEstimado: number;
   ativo: boolean;
 }
 
@@ -42,7 +41,6 @@ export interface ServicoRequest {
   nmServico: string;
   dsServico?: string;
   vlServico: number;
-  tmpEstimado?: number;
 }
 
 // ==================== AGENDAMENTO ====================
