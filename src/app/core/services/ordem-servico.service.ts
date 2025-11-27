@@ -12,54 +12,81 @@ export class OrdemServicoService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/ordens-servico`;
   
-  // Criar nova ordem de servico
+  // ==================== CRIAR E CONSULTAR ====================
+  
+  /**
+   * Criar nova ordem de serviço ou orçamento
+   */
   criar(data: OrdemServicoRequest): Observable<OrdemServico> {
     return this.http.post<OrdemServico>(this.apiUrl, data);
   }
   
-  // Buscar por ID
+  /**
+   * Buscar ordem de serviço por ID
+   */
   buscarPorId(id: number): Observable<OrdemServico> {
     return this.http.get<OrdemServico>(`${this.apiUrl}/${id}`);
   }
   
-  // Listar por status
+  /**
+   * Listar ordens por status
+   */
   listarPorStatus(status: StatusOrdemServico): Observable<OrdemServico[]> {
     return this.http.get<OrdemServico[]>(`${this.apiUrl}/status/${status}`);
   }
   
-  // Listar orcamentos pendentes
+  /**
+   * Listar orçamentos pendentes de aprovação
+   */
   listarOrcamentosPendentes(): Observable<OrdemServico[]> {
     return this.http.get<OrdemServico[]>(`${this.apiUrl}/orcamentos/pendentes`);
   }
   
-  // Aprovar orcamento com data de agendamento
-  aprovarOrcamento(id: number, dataAgendamento?: string): Observable<OrdemServico> {
-    return this.http.patch<OrdemServico>(`${this.apiUrl}/${id}/aprovar-orcamento`, { dataAgendamento });
-  }
+  // ==================== ATUALIZAR ====================
   
-  // ✅ NOVO: Atualizar ordem de servico
+  /**
+   * Atualizar ordem de serviço (observações e diagnóstico)
+   */
   atualizar(id: number, data: OrdemServicoRequest): Observable<OrdemServico> {
     return this.http.put<OrdemServico>(`${this.apiUrl}/${id}`, data);
   }
   
-  // ✅ NOVO: Alterar status diretamente
-  alterarStatus(id: number, novoStatus: StatusOrdemServico): Observable<OrdemServico> {
-    return this.http.patch<OrdemServico>(`${this.apiUrl}/${id}/alterar-status`, { 
-      novoStatus: novoStatus 
-    });
+  // ==================== MUDANÇAS DE STATUS ====================
+  
+  /**
+   * ✅ NOVO: Aprovar orçamento e criar agendamento
+   * Orçamento → Ordem de Serviço
+   */
+  aprovarOrcamento(id: number, dataAgendamento?: string): Observable<OrdemServico> {
+    return this.http.patch<OrdemServico>(
+      `${this.apiUrl}/${id}/aprovar-orcamento`, 
+      { dataAgendamento }
+    );
   }
   
-  // ✅ NOVO: Iniciar ordem de servico
+  /**
+   * ✅ NOVO: Iniciar ordem de serviço
+   * AGUARDANDO → EM_ANDAMENTO
+   */
   iniciar(id: number): Observable<OrdemServico> {
     return this.http.patch<OrdemServico>(`${this.apiUrl}/${id}/iniciar`, {});
   }
   
-  // Concluir ordem de servico
+  /**
+   * ✅ NOVO: Concluir ordem de serviço e gerar faturamento
+   * EM_ANDAMENTO → CONCLUIDA
+   */
   concluir(id: number, formaPagamento: string): Observable<OrdemServico> {
-    return this.http.patch<OrdemServico>(`${this.apiUrl}/${id}/concluir`, { formaPagamento });
+    return this.http.patch<OrdemServico>(
+      `${this.apiUrl}/${id}/concluir`, 
+      { formaPagamento }
+    );
   }
   
-  // Cancelar ordem de servico
+  /**
+   * ✅ NOVO: Cancelar ordem de serviço e devolver peças
+   * → CANCELADA
+   */
   cancelar(id: number): Observable<void> {
     return this.http.patch<void>(`${this.apiUrl}/${id}/cancelar`, {});
   }

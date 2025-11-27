@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, signal, ViewChild, ElementRef } from '@angular/core';
+// src/app/features/ordens-servico/ordens-servico-lista/ordens-servico-lista.component.ts
+import { Component, inject, OnInit, signal, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { OrdemServicoService } from '../../../core/services/ordem-servico.service';
@@ -7,7 +8,6 @@ import { VeiculoService } from '../../../core/services/veiculo.service';
 import { ProdutoService } from '../../../core/services/produto.service';
 import { ServicoService } from '../../../core/services/servico.service';
 import { UsuarioService } from '../../../core/services/usuario.service';
-import { AuthService } from '../../../core/services/auth.service';
 import { OrdemServico, OrdemServicoRequest, ItemOrdemServicoRequest, Cliente, Veiculo, Produto, Servico, Usuario, StatusOrdemServico, TipoServico, FormaPagamento } from '../../../core/models';
 
 declare var bootstrap: any;
@@ -35,15 +35,17 @@ export class OrdensServicoListaComponent implements OnInit {
   private produtoService = inject(ProdutoService);
   private servicoService = inject(ServicoService);
   private usuarioService = inject(UsuarioService);
-  private authService = inject(AuthService);
   private fb = inject(FormBuilder);
   
   @ViewChild('ordemModal') modalElement!: ElementRef;
   @ViewChild('aprovarModal') aprovarModalElement!: ElementRef;
   @ViewChild('editarModal') editarModalElement!: ElementRef;
+  @ViewChild('concluirModal') concluirModalElement!: ElementRef;
+  
   private modalInstance: any;
   public aprovarModalInstance: any;
   public editarModalInstance: any;
+  public concluirModalInstance: any;
   
   ordens = signal<OrdemServico[]>([]);
   ordensFiltradas = signal<OrdemServico[]>([]);
@@ -60,6 +62,7 @@ export class OrdensServicoListaComponent implements OnInit {
   ordemForm!: FormGroup;
   aprovarForm!: FormGroup;
   editarForm!: FormGroup;
+  concluirForm!: FormGroup;
   itens = signal<ItemLocal[]>([]);
   
   produtoSelecionado = signal<number | null>(null);
@@ -68,10 +71,9 @@ export class OrdensServicoListaComponent implements OnInit {
   
   ordemParaAprovar = signal<OrdemServico | null>(null);
   ordemParaEditar = signal<OrdemServico | null>(null);
+  ordemParaConcluir = signal<OrdemServico | null>(null);
   
-  // ✅ NOVO: Controle do dropdown de status
   dropdownAbertoId = signal<number | null>(null);
-  
   filtroStatus = signal<StatusOrdemServico | 'TODOS'>('TODOS');
   
   statusOptions = [
@@ -82,7 +84,6 @@ export class OrdensServicoListaComponent implements OnInit {
     { value: StatusOrdemServico.CANCELADA, label: 'Cancelada', class: 'danger' }
   ];
   
-  // ✅ NOVO: Opções de status para o dropdown (sem "TODOS")
   statusDropdownOptions = [
     { value: StatusOrdemServico.AGUARDANDO, label: 'Aguardando', class: 'warning', icon: 'clock' },
     { value: StatusOrdemServico.EM_ANDAMENTO, label: 'Em Andamento', class: 'primary', icon: 'play-circle' },
@@ -97,22 +98,23 @@ export class OrdensServicoListaComponent implements OnInit {
   
   formasPagamento = [
     { value: FormaPagamento.DINHEIRO, label: 'Dinheiro' },
+    { value: FormaPagamento.PIX, label: 'PIX' },
     { value: FormaPagamento.CARTAO_CREDITO, label: 'Cartão de Crédito' },
-    { value: FormaPagamento.CARTAO_DEBITO, label: 'Cartão de Débito' },
-    { value: FormaPagamento.PIX, label: 'PIX' }
+    { value: FormaPagamento.CARTAO_DEBITO, label: 'Cartão de Débito' }
   ];
+  
+  // ✅ Listener global para fechar dropdown ao clicar fora
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.status-dropdown-container')) {
+      this.dropdownAbertoId.set(null);
+    }
+  }
   
   ngOnInit(): void {
     this.inicializarForms();
     this.carregarDados();
-    
-    // ✅ NOVO: Fechar dropdown ao clicar fora
-    document.addEventListener('click', (event) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest('.status-dropdown-container')) {
-        this.dropdownAbertoId.set(null);
-      }
-    });
   }
   
   ngAfterViewInit(): void {
@@ -124,6 +126,9 @@ export class OrdensServicoListaComponent implements OnInit {
     }
     if (this.editarModalElement) {
       this.editarModalInstance = new bootstrap.Modal(this.editarModalElement.nativeElement);
+    }
+    if (this.concluirModalElement) {
+      this.concluirModalInstance = new bootstrap.Modal(this.concluirModalElement.nativeElement);
     }
   }
   
@@ -144,8 +149,12 @@ export class OrdensServicoListaComponent implements OnInit {
     
     this.editarForm = this.fb.group({
       observacoes: [''],
-      diagnostico: [''],
-      novoStatus: ['']
+      diagnostico: ['']
+    });
+    
+    // ✅ NOVO: Form para conclusão
+    this.concluirForm = this.fb.group({
+      formaPagamento: ['', [Validators.required]]
     });
     
     this.ordemForm.get('cdCliente')?.valueChanges.subscribe(cdCliente => {
@@ -158,20 +167,17 @@ export class OrdensServicoListaComponent implements OnInit {
     
     this.ordemForm.get('tipoServico')?.valueChanges.subscribe(tipo => {
       const dataControl = this.ordemForm.get('dataAgendamento');
-      
       if (tipo === TipoServico.ORDEM_DE_SERVICO) {
         dataControl?.setValidators([Validators.required]);
       } else {
         dataControl?.clearValidators();
       }
-      
       dataControl?.updateValueAndValidity();
     });
   }
   
   carregarDados(): void {
     this.isLoading.set(true);
-    
     Promise.all([
       this.carregarOrdens(),
       this.carregarClientes(),
@@ -185,23 +191,20 @@ export class OrdensServicoListaComponent implements OnInit {
   
   carregarOrdens(): Promise<void> {
     return new Promise((resolve) => {
-      this.ordemServicoService.listarPorStatus(StatusOrdemServico.AGUARDANDO).subscribe({
-        next: (ordensAguardando) => {
-          this.ordemServicoService.listarPorStatus(StatusOrdemServico.EM_ANDAMENTO).subscribe({
-            next: (ordensAndamento) => {
-              this.ordens.set([...ordensAguardando, ...ordensAndamento]);
-              this.aplicarFiltro();
-              resolve();
-            },
-            error: () => {
-              this.ordens.set(ordensAguardando);
-              this.aplicarFiltro();
-              resolve();
-            }
-          });
-        },
-        error: () => resolve()
-      });
+      Promise.all([
+        this.ordemServicoService.listarPorStatus(StatusOrdemServico.AGUARDANDO).toPromise(),
+        this.ordemServicoService.listarPorStatus(StatusOrdemServico.EM_ANDAMENTO).toPromise(),
+        this.ordemServicoService.listarOrcamentosPendentes().toPromise()
+      ]).then(([aguardando, emAndamento, orcamentos]) => {
+        const todasOrdens = [
+          ...(aguardando || []),
+          ...(emAndamento || []),
+          ...(orcamentos || [])
+        ];
+        this.ordens.set(todasOrdens);
+        this.aplicarFiltro();
+        resolve();
+      }).catch(() => resolve());
     });
   }
   
@@ -231,7 +234,7 @@ export class OrdensServicoListaComponent implements OnInit {
   carregarProdutos(): Promise<void> {
     return new Promise((resolve) => {
       this.produtoService.listarAtivos().subscribe({
-        next: (produtos: Produto[]) => {
+        next: (produtos) => {
           this.produtos.set(produtos);
           resolve();
         },
@@ -266,11 +269,9 @@ export class OrdensServicoListaComponent implements OnInit {
   
   aplicarFiltro(): void {
     let filtradas = this.ordens();
-    
     if (this.filtroStatus() !== 'TODOS') {
       filtradas = filtradas.filter(o => o.statusOrdemServico === this.filtroStatus());
     }
-    
     this.ordensFiltradas.set(filtradas);
   }
   
@@ -279,7 +280,8 @@ export class OrdensServicoListaComponent implements OnInit {
     this.aplicarFiltro();
   }
   
-  // ✅ NOVO: Toggle do dropdown de status
+  // ==================== DROPDOWN DE STATUS ====================
+  
   toggleDropdownStatus(ordemId: number, event: Event): void {
     event.stopPropagation();
     
@@ -287,63 +289,139 @@ export class OrdensServicoListaComponent implements OnInit {
       this.dropdownAbertoId.set(null);
     } else {
       this.dropdownAbertoId.set(ordemId);
+      
+      // ✅ Posicionar dropdown corretamente com position: fixed
+      setTimeout(() => {
+        const target = event.target as HTMLElement;
+        const badge = target.closest('.status-clickable') as HTMLElement;
+        const dropdown = target.closest('.status-dropdown-container')?.querySelector('.status-dropdown-menu') as HTMLElement;
+        
+        if (badge && dropdown) {
+          const rect = badge.getBoundingClientRect();
+          dropdown.style.top = `${rect.bottom + 4}px`;
+          dropdown.style.left = `${rect.left}px`;
+        }
+      }, 0);
     }
   }
   
-  // ✅ NOVO: Verificar se dropdown está aberto
   isDropdownAberto(ordemId: number): boolean {
     return this.dropdownAbertoId() === ordemId;
   }
   
-  // ✅ NOVO: Mudar status da ordem
+  // ✅ CORRIGIDO: Mudar status com validações corretas
   mudarStatus(ordem: OrdemServico, novoStatus: StatusOrdemServico, event: Event): void {
     event.stopPropagation();
-    
-    // Fechar dropdown
     this.dropdownAbertoId.set(null);
     
-    // Se o status não mudou, não faz nada
     if (ordem.statusOrdemServico === novoStatus) {
       return;
     }
     
-    // Se mudou para CONCLUIDA, precisa de forma de pagamento
+    // Se mudou para CONCLUIDA, abre modal de pagamento
     if (novoStatus === StatusOrdemServico.CONCLUIDA) {
-      this.concluirOrdem(ordem);
+      this.abrirModalConcluir(ordem);
       return;
     }
     
-    // Confirmar mudança
-    const statusAtual = this.getStatusLabel(ordem.statusOrdemServico);
-    const novoStatusLabel = this.getStatusLabel(novoStatus);
-    
-    if (!confirm(`Deseja alterar o status de "${statusAtual}" para "${novoStatusLabel}"?`)) {
+    // Se mudou para EM_ANDAMENTO, chama método específico
+    if (novoStatus === StatusOrdemServico.EM_ANDAMENTO && 
+        ordem.statusOrdemServico === StatusOrdemServico.AGUARDANDO) {
+      this.iniciarOrdem(ordem);
       return;
     }
     
-    // Chamar o service
-    this.ordemServicoService.alterarStatus(ordem.cdOrdemServico, novoStatus).subscribe({
+    // Se mudou para CANCELADA
+    if (novoStatus === StatusOrdemServico.CANCELADA) {
+      this.cancelarOrdem(ordem);
+      return;
+    }
+    
+    alert('Esta mudança de status não é permitida diretamente.');
+  }
+  
+  // ==================== AÇÕES DE STATUS ====================
+  
+  iniciarOrdem(ordem: OrdemServico): void {
+    if (!confirm(`Deseja iniciar a Ordem de Serviço #${ordem.cdOrdemServico}?`)) {
+      return;
+    }
+    
+    this.ordemServicoService.iniciar(ordem.cdOrdemServico).subscribe({
       next: () => {
         this.carregarOrdens();
-        alert(`Status alterado para "${novoStatusLabel}" com sucesso!`);
+        alert('✅ Ordem de serviço iniciada com sucesso!');
       },
       error: (error) => {
-        console.error('Erro ao alterar status:', error);
-        alert(error.error?.message || 'Erro ao alterar status');
+        console.error('Erro ao iniciar ordem:', error);
+        alert('❌ ' + (error.error?.message || 'Erro ao iniciar ordem'));
       }
     });
   }
+  
+  abrirModalConcluir(ordem: OrdemServico): void {
+    this.ordemParaConcluir.set(ordem);
+    this.concluirForm.patchValue({
+      formaPagamento: FormaPagamento.PIX
+    });
+    this.concluirModalInstance?.show();
+  }
+  
+  concluirOrdem(): void {
+    if (this.concluirForm.invalid) {
+      alert('Selecione a forma de pagamento');
+      return;
+    }
+    
+    const ordem = this.ordemParaConcluir();
+    if (!ordem) return;
+    
+    const formaPagamento = this.concluirForm.get('formaPagamento')?.value;
+    
+    this.isSubmitting.set(true);
+    
+    this.ordemServicoService.concluir(ordem.cdOrdemServico, formaPagamento).subscribe({
+      next: () => {
+        this.isSubmitting.set(false);
+        this.concluirModalInstance?.hide();
+        this.carregarOrdens();
+        alert('✅ Ordem concluída com sucesso! Faturamento gerado automaticamente.');
+      },
+      error: (error) => {
+        console.error('Erro ao concluir:', error);
+        this.isSubmitting.set(false);
+        alert('❌ ' + (error.error?.message || 'Erro ao concluir ordem'));
+      }
+    });
+  }
+  
+  cancelarOrdem(ordem: OrdemServico): void {
+    if (!confirm(`⚠️ Deseja realmente cancelar esta ordem? As peças serão devolvidas ao estoque.`)) {
+      return;
+    }
+    
+    this.ordemServicoService.cancelar(ordem.cdOrdemServico).subscribe({
+      next: () => {
+        this.carregarOrdens();
+        alert('✅ Ordem cancelada com sucesso! Peças devolvidas ao estoque.');
+      },
+      error: (error) => {
+        console.error('Erro ao cancelar:', error);
+        alert('❌ ' + (error.error?.message || 'Erro ao cancelar ordem'));
+      }
+    });
+  }
+  
+  // ==================== CRIAR ORDEM ====================
   
   abrirModalNovo(): void {
     this.ordemForm.reset({
       tipoServico: TipoServico.ORDEM_DE_SERVICO
     });
-    
     const hoje = new Date().toISOString().split('T')[0];
     this.ordemForm.patchValue({
       dataAgendamento: hoje
     });
-    
     this.itens.set([]);
     this.produtoSelecionado.set(null);
     this.servicoSelecionado.set(null);
@@ -403,7 +481,6 @@ export class OrdensServicoListaComponent implements OnInit {
   
   adicionarServico(): void {
     const cdServico = this.servicoSelecionado();
-    
     if (!cdServico) {
       alert('Selecione um serviço');
       return;
@@ -413,7 +490,6 @@ export class OrdensServicoListaComponent implements OnInit {
     if (!servico) return;
     
     const itemExistente = this.itens().find(i => i.tipo === 'servico' && i.codigo === cdServico);
-    
     if (itemExistente) {
       alert('Serviço já adicionado');
       return;
@@ -452,7 +528,6 @@ export class OrdensServicoListaComponent implements OnInit {
     }
     
     this.isSubmitting.set(true);
-    
     const formValue = this.ordemForm.value;
     
     const itensRequest: ItemOrdemServicoRequest[] = this.itens().map(item => ({
@@ -478,24 +553,24 @@ export class OrdensServicoListaComponent implements OnInit {
         this.isSubmitting.set(false);
         this.fecharModal();
         this.carregarOrdens();
-        alert('Ordem de serviço criada com sucesso!');
+        alert('✅ Ordem de serviço criada com sucesso!');
       },
       error: (error) => {
         console.error('Erro ao salvar ordem:', error);
         this.isSubmitting.set(false);
-        alert(error.error?.message || error.message || 'Erro ao salvar ordem de serviço');
+        alert('❌ ' + (error.error?.message || error.message || 'Erro ao salvar ordem de serviço'));
       }
     });
   }
   
+  // ==================== APROVAR ORÇAMENTO ====================
+  
   abrirModalAprovar(ordem: OrdemServico): void {
     this.ordemParaAprovar.set(ordem);
-    
     const hoje = new Date().toISOString().split('T')[0];
     this.aprovarForm.patchValue({
       dataAgendamento: hoje
     });
-    
     this.aprovarModalInstance?.show();
   }
   
@@ -517,25 +592,24 @@ export class OrdensServicoListaComponent implements OnInit {
         this.isSubmitting.set(false);
         this.aprovarModalInstance?.hide();
         this.carregarOrdens();
-        alert('Orçamento aprovado com sucesso! Agendamento criado automaticamente.');
+        alert('✅ Orçamento aprovado! Agendamento criado automaticamente.');
       },
       error: (error) => {
         console.error('Erro ao aprovar:', error);
         this.isSubmitting.set(false);
-        alert(error.error?.message || 'Erro ao aprovar orçamento');
+        alert('❌ ' + (error.error?.message || 'Erro ao aprovar orçamento'));
       }
     });
   }
   
+  // ==================== EDITAR ORDEM ====================
+  
   abrirModalEditar(ordem: OrdemServico): void {
     this.ordemParaEditar.set(ordem);
-    
     this.editarForm.patchValue({
       observacoes: ordem.observacoes || '',
-      diagnostico: ordem.diagnostico || '',
-      novoStatus: ordem.statusOrdemServico
+      diagnostico: ordem.diagnostico || ''
     });
-    
     this.editarModalInstance?.show();
   }
   
@@ -544,7 +618,6 @@ export class OrdensServicoListaComponent implements OnInit {
     if (!ordem) return;
     
     this.isSubmitting.set(true);
-    
     const formValue = this.editarForm.value;
     
     const dados: OrdemServicoRequest = {
@@ -562,61 +635,17 @@ export class OrdensServicoListaComponent implements OnInit {
         this.isSubmitting.set(false);
         this.editarModalInstance?.hide();
         this.carregarOrdens();
-        alert('Ordem atualizada com sucesso!');
+        alert('✅ Ordem atualizada com sucesso!');
       },
       error: (error) => {
         console.error('Erro ao atualizar:', error);
         this.isSubmitting.set(false);
-        alert(error.error?.message || 'Erro ao atualizar ordem');
+        alert('❌ ' + (error.error?.message || 'Erro ao atualizar ordem'));
       }
     });
   }
   
-  concluirOrdem(ordem: OrdemServico): void {
-    const formaPagamento = prompt('Forma de pagamento:\n1 - Dinheiro\n2 - Cartão Crédito\n3 - Cartão Débito\n4 - PIX');
-    
-    if (!formaPagamento) return;
-    
-    const formas: { [key: string]: FormaPagamento } = {
-      '1': FormaPagamento.DINHEIRO,
-      '2': FormaPagamento.CARTAO_CREDITO,
-      '3': FormaPagamento.CARTAO_DEBITO,
-      '4': FormaPagamento.PIX
-    };
-    
-    const forma = formas[formaPagamento];
-    
-    if (!forma) {
-      alert('Forma de pagamento inválida');
-      return;
-    }
-    
-    this.ordemServicoService.concluir(ordem.cdOrdemServico, forma).subscribe({
-      next: () => {
-        this.carregarOrdens();
-        alert('Ordem concluída com sucesso!');
-      },
-      error: (error) => {
-        console.error('Erro ao concluir:', error);
-        alert(error.error?.message || 'Erro ao concluir ordem');
-      }
-    });
-  }
-  
-  cancelarOrdem(ordem: OrdemServico): void {
-    if (confirm(`Deseja realmente cancelar esta ordem?`)) {
-      this.ordemServicoService.cancelar(ordem.cdOrdemServico).subscribe({
-        next: () => {
-          this.carregarOrdens();
-          alert('Ordem cancelada com sucesso!');
-        },
-        error: (error) => {
-          console.error('Erro ao cancelar:', error);
-          alert(error.error?.message || 'Erro ao cancelar ordem');
-        }
-      });
-    }
-  }
+  // ==================== UTILS ====================
   
   formatarMoeda(valor: number): string {
     return new Intl.NumberFormat('pt-BR', {
@@ -642,18 +671,14 @@ export class OrdensServicoListaComponent implements OnInit {
   
   formatarDataHora(dataISO: string): string {
     if (!dataISO) return '-';
-    
     try {
       const data = new Date(dataISO);
-      
       if (isNaN(data.getTime())) return '-';
-      
       const dia = String(data.getDate()).padStart(2, '0');
       const mes = String(data.getMonth() + 1).padStart(2, '0');
       const ano = data.getFullYear();
       const hora = String(data.getHours()).padStart(2, '0');
       const min = String(data.getMinutes()).padStart(2, '0');
-      
       return `${dia}/${mes}/${ano} ${hora}:${min}`;
     } catch {
       return '-';

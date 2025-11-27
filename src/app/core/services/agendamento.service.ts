@@ -1,9 +1,9 @@
-
+// src/app/core/services/agendamento.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Agendamento, AgendamentoRequest } from '../models';
+import { Agendamento, AgendamentoRequest, StatusAgendamento } from '../models';
 
 @Injectable({
   providedIn: 'root'
@@ -35,6 +35,13 @@ export class AgendamentoService {
   // Atualizar agendamento
   atualizar(id: number, data: AgendamentoRequest): Observable<Agendamento> {
     return this.http.put<Agendamento>(`${this.apiUrl}/${id}`, data);
+  }
+  
+  // ✅ NOVO: Atualizar status do agendamento (sincroniza com OS)
+  atualizarStatus(id: number, novoStatus: StatusAgendamento): Observable<Agendamento> {
+    return this.http.patch<Agendamento>(`${this.apiUrl}/${id}/status`, {
+      status: novoStatus
+    });
   }
   
   // Cancelar agendamento

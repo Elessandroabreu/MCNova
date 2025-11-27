@@ -1,3 +1,4 @@
+<!-- src/app/features/ordens-servico/ordens-servico-lista/ordens-servico-lista.component.html -->
 <div class="ordens-page">
   <!-- Cabeçalho -->
   <div class="page-header">
@@ -45,7 +46,7 @@
   } @else {
     <!-- Tabela de Ordens -->
     <div class="card">
-      <div class="card-body p-0">
+      <div class="card-body">
         @if (ordensFiltradas().length === 0) {
           <div class="empty-state">
             <i class="bi bi-inbox"></i>
@@ -79,12 +80,12 @@
                     </td>
                     <td>
                       @if (ordem.tipoServico === 'ORCAMENTO') {
-                        <span class="badge bg-info">OS</span>
+                        <span class="badge bg-info">ORÇAMENTO</span>
                       } @else {
                         <span class="badge bg-primary">OS</span>
                       }
                     </td>
-                    <!-- ✅ NOVO: Dropdown de Status Clicável -->
+                    <!-- ✅ Dropdown de Status Clicável -->
                     <td>
                       <div class="status-dropdown-container">
                         <span 
@@ -134,24 +135,13 @@
                         }
                         
                         <!-- Aprovar Orçamento -->
-                        @if (ordem.tipoServico === 'ORCAMENTO' && ordem.statusOrdemServico === 'AGUARDANDO') {
+                        @if (ordem.tipoServico === 'ORCAMENTO' && ordem.statusOrdemServico === 'AGUARDANDO' && !ordem.aprovado) {
                           <button
                             class="btn btn-outline-success"
                             (click)="abrirModalAprovar(ordem)"
                             title="Aprovar Orçamento"
                           >
                             <i class="bi bi-check-circle"></i>
-                          </button>
-                        }
-                        
-                        <!-- Cancelar -->
-                        @if (ordem.statusOrdemServico !== 'CONCLUIDA' && ordem.statusOrdemServico !== 'CANCELADA') {
-                          <button
-                            class="btn btn-outline-danger"
-                            (click)="cancelarOrdem(ordem)"
-                            title="Cancelar"
-                          >
-                            <i class="bi bi-x-circle"></i>
                           </button>
                         }
                       </div>
@@ -174,7 +164,9 @@
   }
 </div>
 
-<!-- Modal de Criar Ordem -->
+<!-- ========================================== -->
+<!-- MODAL DE CRIAR ORDEM -->
+<!-- ========================================== -->
 <div class="modal fade" #ordemModal tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-xl">
     <div class="modal-content">
@@ -471,7 +463,9 @@
   </div>
 </div>
 
-<!-- Modal de Aprovação -->
+<!-- ========================================== -->
+<!-- MODAL DE APROVAÇÃO -->
+<!-- ========================================== -->
 <div class="modal fade" #aprovarModal tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -538,7 +532,9 @@
   </div>
 </div>
 
-<!-- Modal de Edição -->
+<!-- ========================================== -->
+<!-- MODAL DE EDIÇÃO -->
+<!-- ========================================== -->
 <div class="modal fade" #editarModal tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -602,6 +598,82 @@
             } @else {
               <i class="bi bi-check-circle me-2"></i>
               Salvar
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- ✅ MODAL DE CONCLUSÃO COM FORMA DE PAGAMENTO -->
+<!-- ========================================== -->
+<div class="modal fade" #concluirModal tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title">
+          <i class="bi bi-check-circle me-2"></i>
+          Concluir Ordem de Serviço
+        </h5>
+        <button type="button" class="btn-close btn-close-white" (click)="concluirModalInstance?.hide()"></button>
+      </div>
+      
+      <form [formGroup]="concluirForm" (ngSubmit)="concluirOrdem()">
+        <div class="modal-body">
+          @if (ordemParaConcluir(); as ordem) {
+            <div class="alert alert-info">
+              <strong>OS #{{ ordem.cdOrdemServico }}</strong><br>
+              <strong>Cliente:</strong> {{ ordem.nmCliente }}<br>
+              <strong>Veículo:</strong> {{ ordem.placa }}<br>
+              <strong>Total:</strong> <span class="text-success fw-bold">{{ formatarMoeda(ordem.vlTotal) }}</span>
+            </div>
+          }
+          
+          <div class="mb-3">
+            <label for="formaPagamento" class="form-label">
+              Forma de Pagamento <span class="text-danger">*</span>
+            </label>
+            <select
+              class="form-select form-select-lg"
+              id="formaPagamento"
+              formControlName="formaPagamento"
+              required
+            >
+              <option value="">Selecione a forma de pagamento</option>
+              @for (forma of formasPagamento; track forma.value) {
+                <option [value]="forma.value">{{ forma.label }}</option>
+              }
+            </select>
+          </div>
+          
+          <div class="alert alert-warning">
+            <i class="bi bi-info-circle me-2"></i>
+            <strong>Atenção:</strong> Ao concluir, o faturamento será gerado automaticamente e não poderá ser desfeito.
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="concluirModalInstance?.hide()"
+            [disabled]="isSubmitting()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="btn btn-success"
+            [disabled]="isSubmitting() || concluirForm.invalid"
+          >
+            @if (isSubmitting()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+              Concluindo...
+            } @else {
+              <i class="bi bi-check-circle me-2"></i>
+              Concluir e Faturar
             }
           </button>
         </div>
