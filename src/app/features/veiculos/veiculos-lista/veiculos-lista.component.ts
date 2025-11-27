@@ -52,8 +52,8 @@ export class VeiculosListaComponent implements OnInit {
       cdCliente: ['', [Validators.required]],
       placa: ['', [Validators.required, Validators.pattern(/^[A-Z]{3}-?\d{4}$|^[A-Z]{3}\d[A-Z]\d{2}$/)]],
       modelo: ['', [Validators.required, Validators.maxLength(100)]],
-      marca: ['', [Validators.maxLength(50)]],
-      ano: ['', [Validators.min(1900), Validators.max(new Date().getFullYear() + 1)]],
+      marca: ['', [Validators.required, Validators.maxLength(50)]],
+      ano: ['', [Validators.required, Validators.min(1900), Validators.max(new Date().getFullYear() + 1)]],
       cor: ['', [Validators.maxLength(30)]]
     });
   }
