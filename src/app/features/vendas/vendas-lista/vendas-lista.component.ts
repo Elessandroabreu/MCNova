@@ -115,19 +115,17 @@ export class VendasListaComponent implements OnInit {
     });
   }
   
-// No método carregarProdutos()
-
-carregarProdutos(): Promise<void> {
-  return new Promise((resolve) => {
-    this.produtoService.listarAtivos().subscribe({ // ✅ Agora existe
-      next: (produtos: Produto[]) => { // ✅ Tipagem correta
-        this.produtos.set(produtos);
-        resolve();
-      },
-      error: () => resolve()
+  carregarProdutos(): Promise<void> {
+    return new Promise((resolve) => {
+      this.produtoService.listarAtivos().subscribe({
+        next: (produtos: Produto[]) => {
+          this.produtos.set(produtos);
+          resolve();
+        },
+        error: () => resolve()
+      });
     });
-  });
-}
+  }
   
   aplicarFiltro(): void {
     const termo = this.searchTerm().toLowerCase();
@@ -174,8 +172,7 @@ carregarProdutos(): Promise<void> {
       alert('Produto não encontrado');
       return;
     }
-
-        
+    
     // Verifica estoque
     if (produto.qtdEstoque < quantidade) {
       alert(`Estoque insuficiente! Disponível: ${produto.qtdEstoque}`);
@@ -190,6 +187,13 @@ carregarProdutos(): Promise<void> {
       const novosItens = this.itensVenda().map(item => {
         if (item.cdProduto === cdProduto) {
           const novaQuantidade = item.quantidade + quantidade;
+          
+          // Verifica estoque novamente com a nova quantidade
+          if (produto.qtdEstoque < novaQuantidade) {
+            alert(`Estoque insuficiente! Disponível: ${produto.qtdEstoque}`);
+            return item;
+          }
+          
           return {
             ...item,
             quantidade: novaQuantidade,
@@ -259,8 +263,14 @@ carregarProdutos(): Promise<void> {
       next: () => {
         this.isSubmitting.set(false);
         this.fecharModal();
-        this.carregarVendas();
-        alert('Venda realizada com sucesso!');
+        
+        // ✅ RECARREGAR PRODUTOS E VENDAS
+        Promise.all([
+          this.carregarVendas(),
+          this.carregarProdutos()
+        ]).then(() => {
+          alert('Venda realizada com sucesso!');
+        });
       },
       error: (error) => {
         console.error('Erro ao salvar venda:', error);
@@ -282,7 +292,15 @@ carregarProdutos(): Promise<void> {
     return formaObj?.label || forma;
   }
   
+  // ✅ MÉTODO PARA OBTER NOME DO CLIENTE
+  getClienteNome(cdCliente?: number): string {
+    if (!cdCliente) return 'Sem cliente';
+    const cliente = this.clientes().find(c => c.cdCliente === cdCliente);
+    return cliente?.nmCliente || 'Cliente não encontrado';
+  }
+  
   formatarData(data: string): string {
+    if (!data) return '-';
     return formatarData(data);
   }
 }
