@@ -28,7 +28,7 @@
             <input
               type="text"
               class="form-control"
-              placeholder="Buscar por cliente, veículo, mecânico ou serviço..."
+              placeholder="Buscar por cliente, veículo, mecânico ou observações..."
               [(ngModel)]="searchTerm"
               (ngModelChange)="aplicarFiltro()"
             />
@@ -77,11 +77,11 @@
         <table class="table table-hover mb-0">
           <thead>
             <tr>
-              <th>Data/Hora</th>
+              <th>Data</th>
               <th>Cliente</th>
               <th>Veículo</th>
-              <th>Serviço</th>
               <th>Mecânico</th>
+              <th>Observações</th>
               <th>Status</th>
               <th class="text-center">Ações</th>
             </tr>
@@ -90,25 +90,18 @@
             @for (agendamento of agendamentosFiltrados(); track
             agendamento.cdAgendamento) {
             <tr>
+              <!-- ✅ CORRIGIDO: Apenas data -->
               <td>
-                <strong>{{
-                  formatarDataHora(agendamento.dataAgendamento)
-                }}</strong>
+                <strong>{{ formatarData(agendamento.dataAgendamento) }}</strong>
               </td>
-              <td>{{ agendamento.cliente?.nmCliente || "-" }}</td>
+              <td>{{ agendamento.nmCliente || "-" }}</td>
               <td>
-                <span class="placa">{{
-                  agendamento.veiculo?.placa || "-"
-                }}</span>
-                <br />
-                <small class="text-muted">{{
-                  agendamento.veiculo?.modelo || "-"
-                }}</small>
+                <span class="placa">{{ agendamento.placa || "-" }}</span>
               </td>
+              <td>{{ agendamento.nmMecanico || "-" }}</td>
               <td>
                 <small>{{ agendamento.observacoes || "-" }}</small>
               </td>
-              <td>{{ agendamento.mecanico?.nmUsuario || "-" }}</td>
               <td>
                 <span
                   class="badge"
@@ -241,10 +234,10 @@
               }
             </div>
 
-            <!-- Data e Hora -->
-            <div class="col-md-6">
+            <!-- ✅ CORRIGIDO: Apenas Data (sem hora) -->
+            <div class="col-md-12">
               <label for="dataAgendamento" class="form-label">
-                Data <span class="text-danger">*</span>
+                Data do Agendamento <span class="text-danger">*</span>
               </label>
               <input
                 type="date"
@@ -256,24 +249,6 @@
               @if (isFieldInvalid('dataAgendamento')) {
               <div class="invalid-feedback">
                 {{ getFieldError("dataAgendamento") }}
-              </div>
-              }
-            </div>
-
-            <div class="col-md-6">
-              <label for="horaAgendamento" class="form-label">
-                Hora <span class="text-danger">*</span>
-              </label>
-              <input
-                type="time"
-                class="form-control"
-                id="horaAgendamento"
-                formControlName="horaAgendamento"
-                [class.is-invalid]="isFieldInvalid('horaAgendamento')"
-              />
-              @if (isFieldInvalid('horaAgendamento')) {
-              <div class="invalid-feedback">
-                {{ getFieldError("horaAgendamento") }}
               </div>
               }
             </div>
@@ -303,35 +278,17 @@
               }
             </div>
 
-            <!-- Descrição/Observações do Serviço -->
+            <!-- Observações -->
             <div class="col-md-12">
               <label for="observacoes" class="form-label">
-                Descrição do Serviço <span class="text-danger">*</span>
+                Observações
               </label>
               <textarea
                 class="form-control"
                 id="observacoes"
                 formControlName="observacoes"
                 rows="3"
-                placeholder="Ex: Revisão completa, Troca de óleo, observações adicionais..."
-                [class.is-invalid]="isFieldInvalid('observacoes')"
-              ></textarea>
-              @if (isFieldInvalid('observacoes')) {
-              <div class="invalid-feedback">
-                {{ getFieldError("observacoes") }}
-              </div>
-              }
-            </div>
-
-            <!-- Observações -->
-            <div class="col-md-12">
-              <label for="observacoes" class="form-label">Observações</label>
-              <textarea
-                class="form-control"
-                id="observacoes"
-                formControlName="observacoes"
-                rows="2"
-                placeholder="Observações adicionais..."
+                placeholder="Ex: Revisão completa, troca de óleo, observações adicionais..."
                 [class.is-invalid]="isFieldInvalid('observacoes')"
               ></textarea>
               @if (isFieldInvalid('observacoes')) {

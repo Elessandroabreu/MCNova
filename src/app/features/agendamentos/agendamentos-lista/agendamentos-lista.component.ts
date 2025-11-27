@@ -6,7 +6,7 @@ import { ClienteService } from '../../../core/services/cliente.service';
 import { VeiculoService } from '../../../core/services/veiculo.service';
 import { UsuarioService } from '../../../core/services/usuario.service';
 import { Agendamento, AgendamentoRequest, Cliente, Veiculo, Usuario, StatusAgendamento } from '../../../core/models';
-import { formatarData, formatarDataHora, dataParaISO, dataHoraParaISO } from '../../../core/utils/formatters.util';
+import { formatarDataSimples } from '../../../core/utils/formatters.util';
 
 declare var bootstrap: any;
 
@@ -68,9 +68,8 @@ export class AgendamentosListaComponent implements OnInit {
       cdCliente: ['', [Validators.required]],
       cdVeiculo: ['', [Validators.required]],
       cdMecanico: ['', [Validators.required]],
-      dataAgendamento: ['', [Validators.required]],
-      horaAgendamento: ['', [Validators.required]],
-      observacoes: ['', [Validators.maxLength(500)]]
+      dataAgendamento: ['', [Validators.required]], // ✅ APENAS DATA
+      observacoes: ['', [Validators.maxLength(1000)]]
     });
     
     // Listener para carregar veículos quando selecionar cliente
@@ -79,6 +78,7 @@ export class AgendamentosListaComponent implements OnInit {
         this.carregarVeiculosCliente(cdCliente);
       } else {
         this.veiculosCliente.set([]);
+        this.agendamentoForm.patchValue({ cdVeiculo: '' });
       }
     });
   }
@@ -106,6 +106,7 @@ export class AgendamentosListaComponent implements OnInit {
         },
         error: (error) => {
           console.error('Erro ao carregar agendamentos:', error);
+          alert('Erro ao carregar agendamentos: ' + (error.error?.message || error.message));
           resolve();
         }
       });
@@ -160,8 +161,8 @@ export class AgendamentosListaComponent implements OnInit {
     });
   }
   
- aplicarFiltro(): void {
-  const termo = this.searchTerm.toLowerCase();
+  aplicarFiltro(): void {
+    const termo = this.searchTerm.toLowerCase();
     let filtrados = this.agendamentos();
     
     // Filtro por status
@@ -172,9 +173,9 @@ export class AgendamentosListaComponent implements OnInit {
     // Filtro por busca
     if (termo) {
       filtrados = filtrados.filter(agendamento =>
-        agendamento.cliente?.nmCliente.toLowerCase().includes(termo) ||
-        agendamento.veiculo?.placa.toLowerCase().includes(termo) ||
-        agendamento.mecanico?.nmUsuario.toLowerCase().includes(termo) ||
+        agendamento.nmCliente?.toLowerCase().includes(termo) ||
+        agendamento.placa?.toLowerCase().includes(termo) ||
+        agendamento.nmMecanico?.toLowerCase().includes(termo) ||
         agendamento.observacoes?.toLowerCase().includes(termo)
       );
     }
@@ -192,9 +193,9 @@ export class AgendamentosListaComponent implements OnInit {
     this.agendamentoEditando.set(null);
     this.agendamentoForm.reset();
     
-    // Data padrão: hoje
+    // ✅ Data padrão: hoje
     const hoje = new Date();
-    const dataFormatada = hoje.toISOString().split('T')[0];
+    const dataFormatada = hoje.toISOString().split('T')[0]; // "2025-01-20"
     this.agendamentoForm.patchValue({
       dataAgendamento: dataFormatada
     });
@@ -206,23 +207,17 @@ export class AgendamentosListaComponent implements OnInit {
     this.modoEdicao.set(true);
     this.agendamentoEditando.set(agendamento);
     
-    // Extrair data e hora
-    const dataHora = new Date(agendamento.dataAgendamento);
-    const data = dataHora.toISOString().split('T')[0];
-    const hora = dataHora.toTimeString().slice(0, 5);
-    
     this.agendamentoForm.patchValue({
-      cdCliente: agendamento.cliente?.cdCliente || '',
-      cdVeiculo: agendamento.veiculo?.cdVeiculo || '',
-      cdMecanico: agendamento.mecanico?.cdUsuario || '',
-      dataAgendamento: data,
-      horaAgendamento: hora,
+      cdCliente: agendamento.cdCliente,
+      cdVeiculo: agendamento.cdVeiculo,
+      cdMecanico: agendamento.cdMecanico,
+      dataAgendamento: agendamento.dataAgendamento, // ✅ Já vem no formato correto "2025-01-20"
       observacoes: agendamento.observacoes || ''
     });
     
     // Carregar veículos do cliente
-    if (agendamento.cliente?.cdCliente) {
-      this.carregarVeiculosCliente(agendamento.cliente.cdCliente);
+    if (agendamento.cdCliente) {
+      this.carregarVeiculosCliente(agendamento.cdCliente);
     }
     
     this.modalInstance?.show();
@@ -244,15 +239,13 @@ export class AgendamentosListaComponent implements OnInit {
     
     const formValue = this.agendamentoForm.value;
     
-    // Combinar data e hora
-    const dataHoraISO = dataHoraParaISO(formValue.dataAgendamento, formValue.horaAgendamento);
-    
     const dados: AgendamentoRequest = {
       cdCliente: formValue.cdCliente,
       cdVeiculo: formValue.cdVeiculo,
       cdMecanico: formValue.cdMecanico,
-      dataAgendamento: dataHoraISO,
-      observacoes: formValue.observacoes || undefined
+      dataAgendamento: formValue.dataAgendamento, // ✅ Já está no formato "2025-01-20"
+      observacoes: formValue.observacoes || undefined,
+      status: StatusAgendamento.AGENDADO
     };
     
     const operacao = this.modoEdicao()
@@ -264,24 +257,26 @@ export class AgendamentosListaComponent implements OnInit {
         this.isSubmitting.set(false);
         this.fecharModal();
         this.carregarAgendamentos();
+        alert(this.modoEdicao() ? 'Agendamento atualizado com sucesso!' : 'Agendamento criado com sucesso!');
       },
       error: (error) => {
         console.error('Erro ao salvar agendamento:', error);
         this.isSubmitting.set(false);
-        alert(error.message || 'Erro ao salvar agendamento');
+        alert('Erro ao salvar agendamento: ' + (error.error?.message || error.message));
       }
     });
   }
   
   confirmarCancelamento(agendamento: Agendamento): void {
-    if (confirm(`Deseja realmente cancelar o agendamento para ${agendamento.cliente?.nmCliente}?`)) {
+    if (confirm(`Deseja realmente cancelar o agendamento de ${agendamento.nmCliente} no dia ${this.formatarData(agendamento.dataAgendamento)}?`)) {
       this.agendamentoService.cancelar(agendamento.cdAgendamento).subscribe({
         next: () => {
           this.carregarAgendamentos();
+          alert('Agendamento cancelado com sucesso!');
         },
         error: (error) => {
           console.error('Erro ao cancelar agendamento:', error);
-          alert('Erro ao cancelar agendamento');
+          alert('Erro ao cancelar agendamento: ' + (error.error?.message || error.message));
         }
       });
     }
@@ -320,7 +315,8 @@ export class AgendamentosListaComponent implements OnInit {
     });
   }
   
-  formatarDataHora(data: string): string {
-    return formatarDataHora(data);
+  // ✅ FUNÇÃO CORRIGIDA: Apenas data
+  formatarData(data: string): string {
+    return formatarDataSimples(data);
   }
 }

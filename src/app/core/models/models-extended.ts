@@ -46,29 +46,26 @@ export interface ServicoRequest {
 }
 
 // ==================== AGENDAMENTO ====================
-// NOTA: dsServico não existe no backend, usar observacoes para descrição
 export interface Agendamento {
   cdAgendamento: number;
   cdCliente: number;
-  cliente?: { cdCliente: number; nmCliente: string };
+  nmCliente?: string; 
   cdVeiculo: number;
-  veiculo?: { cdVeiculo: number; placa: string; modelo: string };
+  placa?: string; 
   cdMecanico: number;
-  mecanico?: { cdUsuario: number; nmUsuario: string };
-  dataAgendamento: string; // Data/hora do agendamento
-  horario: string;
+  nmMecanico?: string; 
+  dataAgendamento: string; 
   status: StatusAgendamento;
-  observacoes?: string; // Usar para descrição do serviço
+  observacoes?: string;
 }
 
 export interface AgendamentoRequest {
   cdCliente: number;
   cdVeiculo: number;
   cdMecanico: number;
-  dataAgendamento: string;
-  horario?: string;
-  observacoes?: string; // Usar para descrição do serviço
-  status?: string;
+  dataAgendamento: string; // ✅ Formato: "2025-01-20"
+  observacoes?: string;
+  status?: StatusAgendamento;
 }
 
 // ==================== ORDEM DE SERVICO ====================
