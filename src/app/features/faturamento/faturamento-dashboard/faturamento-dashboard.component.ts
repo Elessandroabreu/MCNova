@@ -90,8 +90,8 @@ export class FaturamentoDashboardComponent implements OnInit {
     }).format(valor);
   }
 
-  formatarData(data: string): string {
-    return formatarData(data);
-  }
-
+formatarData(data: string): string {
+  if (!data) return '-';
+  return new Date(data).toLocaleDateString('pt-BR');
+}
 }
