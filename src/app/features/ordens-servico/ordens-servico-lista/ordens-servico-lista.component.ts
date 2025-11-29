@@ -147,6 +147,7 @@ export class OrdensServicoListaComponent implements OnInit {
     });
     
     this.editarForm = this.fb.group({
+
       diagnostico: ['']
     });
     
@@ -693,7 +694,7 @@ export class OrdensServicoListaComponent implements OnInit {
     if (ordem.placaVeiculo && ordem.modeloVeiculo) {
       return `${ordem.placaVeiculo} - ${ordem.modeloVeiculo}`;
     } else if (ordem.placaVeiculo) {
-      return ordem.placa;
+      return ordem.placaVeiculo;
     } else if (ordem.modeloVeiculo) {
       return ordem.modeloVeiculo;
     }

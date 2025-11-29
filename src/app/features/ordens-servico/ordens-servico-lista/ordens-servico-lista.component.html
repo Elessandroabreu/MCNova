@@ -74,12 +74,12 @@
                     </td>
                     <td>{{ getClienteNome(ordem) }}</td>
                     <td>
-                      <span class="placa">{{ ordem.placa || '-' }}</span>
+                      <span class="placa">{{ ordem.placaVeiculo || '-' }}</span>
                       <br>
                       <small class="text-muted">{{ ordem.modeloVeiculo || '-' }}</small>
                     </td>
                     <td>
-                      @if (ordem.tipoServico === 'ORCAMENTO') {
+                      @if (ordem.tipoOrdemOrcamento === 'ORCAMENTO') {
                         <span class="badge bg-info">ORÇAMENTO</span>
                       } @else {
                         <span class="badge bg-primary">OS</span>
@@ -90,11 +90,11 @@
                       <div class="status-dropdown-container">
                         <span 
                           class="badge status-clickable" 
-                          [ngClass]="getStatusClass(ordem.statusOrdemServico)"
+                          [ngClass]="getStatusClass(ordem.status)"
                           (click)="toggleDropdownStatus(ordem.cdOrdemServico, $event)"
                           title="Clique para alterar o status"
                         >
-                          {{ getStatusLabel(ordem.statusOrdemServico) }}
+                          {{ getStatusLabel(ordem.status) }}
                           <i class="bi bi-chevron-down ms-1"></i>
                         </span>
                         
@@ -104,12 +104,12 @@
                             @for (statusOpt of statusDropdownOptions; track statusOpt.value) {
                               <div 
                                 class="status-dropdown-item"
-                                [class.active]="ordem.statusOrdemServico === statusOpt.value"
+                                [class.active]="ordem.status === statusOpt.value"
                                 (click)="mudarStatus(ordem, statusOpt.value, $event)"
                               >
                                 <i class="bi bi-{{ statusOpt.icon }} me-2" [class]="'text-' + statusOpt.class"></i>
                                 <span>{{ statusOpt.label }}</span>
-                                @if (ordem.statusOrdemServico === statusOpt.value) {
+                                @if (ordem.status === statusOpt.value) {
                                   <i class="bi bi-check2 ms-auto text-success"></i>
                                 }
                               </div>
@@ -124,7 +124,7 @@
                     <td class="text-center">
                       <div class="btn-group btn-group-sm">
                         <!-- Editar -->
-                        @if (ordem.statusOrdemServico === 'AGUARDANDO') {
+                        @if (ordem.status === 'AGENDADO') {
                           <button
                             class="btn btn-outline-info"
                             (click)="abrirModalEditar(ordem)"
@@ -135,7 +135,7 @@
                         }
                         
                         <!-- Aprovar Orçamento -->
-                        @if (ordem.tipoServico === 'ORCAMENTO' && ordem.statusOrdemServico === 'AGUARDANDO' && !ordem.aprovado) {
+                        @if (ordem.tipoOrdemOrcamento === 'ORCAMENTO' && ordem.status === 'AGENDADO' && !ordem.aprovado) {
                           <button
                             class="btn btn-outline-success"
                             (click)="abrirModalAprovar(ordem)"
@@ -290,7 +290,7 @@
                         <option [ngValue]="null">Selecione um produto</option>
                         @for (produto of produtos(); track produto.cdProduto) {
                           <option [ngValue]="produto.cdProduto">
-                            {{ produto.nmProduto }} - {{ formatarMoeda(produto.vlVenda) }} (Est: {{ produto.qtdEstoque }})
+                            {{ produto.nmProduto }} - {{ formatarMoeda(produto.vlProduto) }} (Est: {{ produto.qtdEstoque }})
                           </option>
                         }
                       </select>
@@ -498,7 +498,7 @@
           @if (ordemParaAprovar()) {
             <div class="alert alert-info">
               <strong>Cliente:</strong> {{ ordemParaAprovar()?.nmCliente }}<br>
-              <strong>Veículo:</strong> {{ ordemParaAprovar()?.placa }}<br>
+              <strong>Veículo:</strong> {{ ordemParaAprovar()?.placaVeiculo }}<br>
               <strong>Total:</strong> {{ formatarMoeda(ordemParaAprovar()!.vlTotal) }}
             </div>
           }
@@ -552,8 +552,8 @@
             <div class="alert alert-info mb-3">
               <strong>OS #{{ ordemParaEditar()?.cdOrdemServico }}</strong><br>
               <strong>Cliente:</strong> {{ ordemParaEditar()?.nmCliente }}<br>
-              <strong>Veículo:</strong> {{ ordemParaEditar()?.placa }}<br>
-              <strong>Status:</strong> {{ getStatusLabel(ordemParaEditar()!.statusOrdemServico) }}
+              <strong>Veículo:</strong> {{ ordemParaEditar()?.placaVeiculo }}<br>
+              <strong>Status:</strong> {{ getStatusLabel(ordemParaEditar()!.status) }}
             </div>
           }
           
@@ -626,7 +626,7 @@
             <div class="alert alert-info">
               <strong>OS #{{ ordem.cdOrdemServico }}</strong><br>
               <strong>Cliente:</strong> {{ ordem.nmCliente }}<br>
-              <strong>Veículo:</strong> {{ ordem.placa }}<br>
+              <strong>Veículo:</strong> {{ ordem.placaVeiculo }}<br>
               <strong>Total:</strong> <span class="text-success fw-bold">{{ formatarMoeda(ordem.vlTotal) }}</span>
             </div>
           }

@@ -81,9 +81,9 @@ export class ClientesListaComponent implements OnInit {
     
     const filtrados = this.clientes().filter(cliente =>
       cliente.nmCliente.toLowerCase().includes(termo) ||
-      cliente.nuCPF?.includes(termo) ||
+      cliente.cpf?.includes(termo) ||
       cliente.email?.toLowerCase().includes(termo) ||
-      cliente.nuTelefone?.includes(termo)
+      cliente.telefone?.includes(termo)
     );
     
     this.clientesFiltrados.set(filtrados);
@@ -102,9 +102,9 @@ export class ClientesListaComponent implements OnInit {
     
     this.clienteForm.patchValue({
       nmCliente: cliente.nmCliente,
-      nuCPF: cliente.nuCPF || '',
-      nuTelefone: cliente.nuTelefone || '',
-      dsEndereco: cliente.dsEndereco || '',
+      nuCPF: cliente.cpf || '',
+      nuTelefone: cliente.telefone || '',
+      dsEndereco: cliente.endereco || '',
       email: cliente.email || ''
     });
     
@@ -127,8 +127,8 @@ export class ClientesListaComponent implements OnInit {
     const formValue = this.clienteForm.value;
     const dados: ClienteRequest = {
       nmCliente: formValue.nmCliente,
-      nuCPF: formValue.nuCPF ? removerFormatacao(formValue.nuCPF) : undefined,
-      nuTelefone: formValue.nuTelefone ? removerFormatacao(formValue.nuTelefone) : undefined,
+      cpf: formValue.nuCPF ? removerFormatacao(formValue.nuCPF) : undefined,
+      telefone: formValue.nuTelefone ? removerFormatacao(formValue.nuTelefone) : undefined,
       dsEndereco: formValue.dsEndereco || undefined,
       email: formValue.email || undefined
     };
