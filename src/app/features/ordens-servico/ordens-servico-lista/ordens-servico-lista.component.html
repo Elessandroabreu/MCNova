@@ -188,14 +188,15 @@
               </h6>
             </div>
             
+            <!-- ✅ CORRIGIDO: tipoOrdemOrcamento -->
             <div class="col-md-3">
-              <label for="tipoServico" class="form-label">
+              <label for="tipoOrdemOrcamento" class="form-label">
                 Tipo <span class="text-danger">*</span>
               </label>
               <select
                 class="form-select"
-                id="tipoServico"
-                formControlName="tipoServico"
+                id="tipoOrdemOrcamento"
+                formControlName="tipoOrdemOrcamento"
               >
                 @for (tipo of tiposServico; track tipo.value) {
                   <option [value]="tipo.value">{{ tipo.label }}</option>
@@ -257,7 +258,7 @@
             <div class="col-md-4">
               <label for="dataAgendamento" class="form-label">
                 Data de Agendamento
-                @if (ordemForm.get('tipoServico')?.value === 'ORDEM_DE_SERVICO') {
+                @if (ordemForm.get('tipoOrdemOrcamento')?.value === 'ORDEM_DE_SERVICO') {
                   <span class="text-danger">*</span>
                 }
               </label>
@@ -402,6 +403,23 @@
                           </td>
                         </tr>
                       }
+                      <!-- ✅ MÃO DE OBRA EXTRA -->
+                      <tr class="table-warning">
+                        <td colspan="2"><strong>Mão de Obra Extra</strong></td>
+                        <td colspan="3">
+                          <div class="input-group input-group-sm">
+                            <span class="input-group-text">R$</span>
+                            <input
+                              type="number"
+                              class="form-control"
+                              formControlName="vlMaoObraExtra"
+                              min="0"
+                              step="0.01"
+                            />
+                          </div>
+                        </td>
+                        <td></td>
+                      </tr>
                     </tbody>
                     <tfoot>
                       <tr class="table-primary">
@@ -421,15 +439,15 @@
               }
             </div>
             
-            <!-- Observações -->
+            <!-- Diagnóstico -->
             <div class="col-12 mt-3">
-              <label for="observacoes" class="form-label">Observações</label>
+              <label for="diagnostico" class="form-label">Diagnóstico</label>
               <textarea
                 class="form-control"
-                id="observacoes"
-                formControlName="observacoes"
+                id="diagnostico"
+                formControlName="diagnostico"
                 rows="2"
-                placeholder="Observações sobre o serviço..."
+                placeholder="Diagnóstico inicial do veículo..."
               ></textarea>
             </div>
           </div>
@@ -557,14 +575,22 @@
             </div>
           }
           
+          <!-- ✅ MÃO DE OBRA EXTRA -->
           <div class="mb-3">
-            <label for="editObservacoes" class="form-label">Observações</label>
-            <textarea
-              class="form-control"
-              id="editObservacoes"
-              formControlName="observacoes"
-              rows="3"
-            ></textarea>
+            <label for="editVlMaoObraExtra" class="form-label">
+              Mão de Obra Extra (R$)
+            </label>
+            <div class="input-group">
+              <span class="input-group-text">R$</span>
+              <input
+                type="number"
+                class="form-control"
+                id="editVlMaoObraExtra"
+                formControlName="vlMaoObraExtra"
+                min="0"
+                step="0.01"
+              />
+            </div>
           </div>
           
           <div class="mb-3">

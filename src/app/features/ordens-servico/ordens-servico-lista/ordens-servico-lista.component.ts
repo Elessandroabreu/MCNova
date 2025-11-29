@@ -93,7 +93,7 @@ export class OrdensServicoListaComponent implements OnInit {
   
   tiposServico = [
     { value: TipoOrdemOrcamento.ORCAMENTO, label: 'Orçamento' },
-    { value: TipoOrdemOrcamento .ORDEM_DE_SERVICO, label: 'Ordem de Serviço' }
+    { value: TipoOrdemOrcamento.ORDEM_DE_SERVICO, label: 'Ordem de Serviço' }
   ];
   
   formasPagamento = [
@@ -103,7 +103,6 @@ export class OrdensServicoListaComponent implements OnInit {
     { value: FormaPagamento.CARTAO_DEBITO, label: 'Cartão de Débito' }
   ];
   
-  // ✅ Listener global para fechar dropdown ao clicar fora
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     const target = event.target as HTMLElement;
@@ -133,12 +132,14 @@ export class OrdensServicoListaComponent implements OnInit {
   }
   
   inicializarForms(): void {
+    // ✅ CORRIGIDO: tipoOrdemOrcamento em vez de TipoOrdemOrcamento
     this.ordemForm = this.fb.group({
       cdCliente: ['', [Validators.required]],
       cdVeiculo: ['', [Validators.required]],
       cdMecanico: ['', [Validators.required]],
-      TipoOrdemOrcamento: [TipoOrdemOrcamento.ORDEM_DE_SERVICO, [Validators.required]],
+      tipoOrdemOrcamento: [TipoOrdemOrcamento.ORDEM_DE_SERVICO, [Validators.required]],
       dataAgendamento: [''],
+      vlMaoObraExtra: [0],  // ✅ ADICIONADO
       diagnostico: ['']
     });
     
@@ -147,11 +148,10 @@ export class OrdensServicoListaComponent implements OnInit {
     });
     
     this.editarForm = this.fb.group({
-
-      diagnostico: ['']
+      diagnostico: [''],
+      vlMaoObraExtra: [0]  // ✅ ADICIONADO
     });
     
-    // ✅ NOVO: Form para conclusão
     this.concluirForm = this.fb.group({
       formaPagamento: ['', [Validators.required]]
     });
@@ -164,7 +164,8 @@ export class OrdensServicoListaComponent implements OnInit {
       }
     });
     
-    this.ordemForm.get('TipoOrdemOrcamento')?.valueChanges.subscribe(tipo => {
+    // ✅ CORRIGIDO: validação dinâmica de dataAgendamento
+    this.ordemForm.get('tipoOrdemOrcamento')?.valueChanges.subscribe(tipo => {
       const dataControl = this.ordemForm.get('dataAgendamento');
       if (tipo === TipoOrdemOrcamento.ORDEM_DE_SERVICO) {
         dataControl?.setValidators([Validators.required]);
@@ -188,9 +189,9 @@ export class OrdensServicoListaComponent implements OnInit {
     });
   }
   
+  // ✅ CORRIGIDO: Método separado sem finally
   carregarOrdens(): Promise<void> {
     return new Promise((resolve) => {
-      // ✅ CORRIGIDO: Buscar TODAS as ordens (incluindo concluídas e canceladas)
       Promise.all([
         this.ordemServicoService.listarPorStatus(Status.AGENDADO).toPromise(),
         this.ordemServicoService.listarPorStatus(Status.EM_ANDAMENTO).toPromise(),
@@ -205,10 +206,15 @@ export class OrdensServicoListaComponent implements OnInit {
           ...(canceladas || []),
           ...(orcamentos || [])
         ];
+        
+        console.log('📦 Ordens carregadas:', todasOrdens.length);
         this.ordens.set(todasOrdens);
         this.aplicarFiltro();
         resolve();
-      }).catch(() => resolve());
+      }).catch((error) => {
+        console.error('❌ Erro ao carregar ordens:', error);
+        resolve();
+      });
     });
   }
   
@@ -294,7 +300,6 @@ export class OrdensServicoListaComponent implements OnInit {
     } else {
       this.dropdownAbertoId.set(ordemId);
       
-      // ✅ Posicionar dropdown corretamente com position: fixed
       setTimeout(() => {
         const target = event.target as HTMLElement;
         const badge = target.closest('.status-clickable') as HTMLElement;
@@ -313,7 +318,7 @@ export class OrdensServicoListaComponent implements OnInit {
     return this.dropdownAbertoId() === ordemId;
   }
   
-  // ✅ CORRIGIDO: Mudar status com validações corretas
+  // ✅ CORRIGIDO: Lógica de mudança de status
   mudarStatus(ordem: OrdemServico, novoStatus: Status, event: Event): void {
     event.stopPropagation();
     this.dropdownAbertoId.set(null);
@@ -322,26 +327,25 @@ export class OrdensServicoListaComponent implements OnInit {
       return;
     }
     
-    // Se mudou para CONCLUIDA, abre modal de pagamento
+    // ✅ CONCLUIR: Abre modal de pagamento
     if (novoStatus === Status.CONCLUIDO) {
       this.abrirModalConcluir(ordem);
       return;
     }
     
-    // Se mudou para EM_ANDAMENTO, chama método específico
-    if (novoStatus === Status.AGENDADO && 
-        ordem.status === Status.EM_ANDAMENTO) {
+    // ✅ INICIAR: De AGENDADO → EM_ANDAMENTO
+    if (novoStatus === Status.EM_ANDAMENTO && ordem.status === Status.AGENDADO) {
       this.iniciarOrdem(ordem);
       return;
     }
     
-    // Se mudou para CANCELADA
+    // ✅ CANCELAR
     if (novoStatus === Status.CANCELADO) {
       this.cancelarOrdem(ordem);
       return;
     }
     
-    alert('Esta mudança de status não é permitida diretamente.');
+    alert('Esta mudança de status não é permitida.');
   }
   
   // ==================== AÇÕES DE STATUS ====================
@@ -351,13 +355,20 @@ export class OrdensServicoListaComponent implements OnInit {
       return;
     }
     
+    console.log('▶️ Iniciando ordem:', ordem.cdOrdemServico);
+    this.isLoading.set(true);
+    
     this.ordemServicoService.iniciar(ordem.cdOrdemServico).subscribe({
       next: () => {
-        this.carregarOrdens();
-        alert('✅ Ordem de serviço iniciada com sucesso!');
+        console.log('✅ Ordem iniciada');
+        this.carregarOrdens().then(() => {
+          this.isLoading.set(false);
+          alert('✅ Ordem de serviço iniciada com sucesso!');
+        });
       },
       error: (error) => {
-        console.error('Erro ao iniciar ordem:', error);
+        console.error('❌ Erro ao iniciar:', error);
+        this.isLoading.set(false);
         alert('❌ ' + (error.error?.message || 'Erro ao iniciar ordem'));
       }
     });
@@ -382,17 +393,19 @@ export class OrdensServicoListaComponent implements OnInit {
     
     const formaPagamento = this.concluirForm.get('formaPagamento')?.value;
     
+    console.log('✅ Concluindo ordem:', ordem.cdOrdemServico, 'Pagamento:', formaPagamento);
     this.isSubmitting.set(true);
     
     this.ordemServicoService.concluir(ordem.cdOrdemServico, formaPagamento).subscribe({
       next: () => {
+        console.log('✅ Ordem concluída');
         this.isSubmitting.set(false);
         this.concluirModalInstance?.hide();
         this.carregarOrdens();
         alert('✅ Ordem concluída com sucesso! Faturamento gerado automaticamente.');
       },
       error: (error) => {
-        console.error('Erro ao concluir:', error);
+        console.error('❌ Erro ao concluir:', error);
         this.isSubmitting.set(false);
         alert('❌ ' + (error.error?.message || 'Erro ao concluir ordem'));
       }
@@ -404,13 +417,20 @@ export class OrdensServicoListaComponent implements OnInit {
       return;
     }
     
+    console.log('❌ Cancelando ordem:', ordem.cdOrdemServico);
+    this.isLoading.set(true);
+    
     this.ordemServicoService.cancelar(ordem.cdOrdemServico).subscribe({
       next: () => {
-        this.carregarOrdens();
-        alert('✅ Ordem cancelada com sucesso! Peças devolvidas ao estoque.');
+        console.log('✅ Ordem cancelada');
+        this.carregarOrdens().then(() => {
+          this.isLoading.set(false);
+          alert('✅ Ordem cancelada com sucesso! Peças devolvidas ao estoque.');
+        });
       },
       error: (error) => {
-        console.error('Erro ao cancelar:', error);
+        console.error('❌ Erro ao cancelar:', error);
+        this.isLoading.set(false);
         alert('❌ ' + (error.error?.message || 'Erro ao cancelar ordem'));
       }
     });
@@ -420,7 +440,8 @@ export class OrdensServicoListaComponent implements OnInit {
   
   abrirModalNovo(): void {
     this.ordemForm.reset({
-      TipoOrdemOrcamento: TipoOrdemOrcamento.ORDEM_DE_SERVICO
+      tipoOrdemOrcamento: TipoOrdemOrcamento.ORDEM_DE_SERVICO,
+      vlMaoObraExtra: 0
     });
     const hoje = new Date().toISOString().split('T')[0];
     this.ordemForm.patchValue({
@@ -517,7 +538,9 @@ export class OrdensServicoListaComponent implements OnInit {
   }
   
   calcularTotal(): number {
-    return this.itens().reduce((total, item) => total + item.vlTotal, 0);
+    const totalItens = this.itens().reduce((total, item) => total + item.vlTotal, 0);
+    const maoObraExtra = this.ordemForm.get('vlMaoObraExtra')?.value || 0;
+    return totalItens + maoObraExtra;
   }
   
   salvar(): void {
@@ -534,32 +557,37 @@ export class OrdensServicoListaComponent implements OnInit {
     this.isSubmitting.set(true);
     const formValue = this.ordemForm.value;
     
+    // ✅ CORRIGIDO: Enviar vlUnitario
     const itensRequest: ItemOrdemServicoRequest[] = this.itens().map(item => ({
       cdProduto: item.tipo === 'produto' ? item.codigo : undefined,
       cdServico: item.tipo === 'servico' ? item.codigo : undefined,
       quantidade: item.quantidade,
-      vlUnitario: item.vlUnitario
+      vlUnitario: item.vlUnitario  // ✅ ADICIONADO
     }));
     
     const dados: OrdemServicoRequest = {
       cdCliente: formValue.cdCliente,
       cdVeiculo: formValue.cdVeiculo,
       cdMecanico: formValue.cdMecanico,
-      tipoOrdemOrcamento: formValue.TipoOrdemOrcamento,
+      tipoOrdemOrcamento: formValue.tipoOrdemOrcamento,
       dataAgendamento: formValue.dataAgendamento || undefined,
+      vlMaoObraExtra: parseFloat(formValue.vlMaoObraExtra) || undefined,  // ✅ ADICIONADO
       diagnostico: formValue.diagnostico || undefined,
       itens: itensRequest
     };
     
+    console.log('📤 Enviando ordem:', dados);
+    
     this.ordemServicoService.criar(dados).subscribe({
       next: () => {
+        console.log('✅ Ordem criada');
         this.isSubmitting.set(false);
         this.fecharModal();
         this.carregarOrdens();
         alert('✅ Ordem de serviço criada com sucesso!');
       },
       error: (error) => {
-        console.error('Erro ao salvar ordem:', error);
+        console.error('❌ Erro ao salvar:', error);
         this.isSubmitting.set(false);
         alert('❌ ' + (error.error?.message || error.message || 'Erro ao salvar ordem de serviço'));
       }
@@ -610,7 +638,8 @@ export class OrdensServicoListaComponent implements OnInit {
   abrirModalEditar(ordem: OrdemServico): void {
     this.ordemParaEditar.set(ordem);
     this.editarForm.patchValue({
-    diagnostico: ordem.diagnostico || ''
+      diagnostico: ordem.diagnostico || '',
+      vlMaoObraExtra: ordem.vlMaoObraExtra || 0
     });
     this.editarModalInstance?.show();
   }
@@ -628,6 +657,7 @@ export class OrdensServicoListaComponent implements OnInit {
       cdMecanico: ordem.cdMecanico!,
       tipoOrdemOrcamento: ordem.tipoOrdemOrcamento,
       diagnostico: formValue.diagnostico || undefined,
+      vlMaoObraExtra: parseFloat(formValue.vlMaoObraExtra) || undefined,
       itens: []
     };
     

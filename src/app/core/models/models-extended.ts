@@ -121,7 +121,7 @@ export interface OrdemServicoRequest {
   cdMecanico: number;
   tipoOrdemOrcamento: TipoOrdemOrcamento;
   dataAgendamento?: string;
-  vlMaoObra?: number;
+  vlMaoObraExtra?: number;
   diagnostico?: string;
   itens: ItemOrdemServicoRequest[];
 }
@@ -142,6 +142,8 @@ export interface ItemOrdemServicoRequest {
   cdProduto?: number;
   cdServico?: number;
   quantidade: number;
+  vlUnitario?: number;
+  
 }
 
 // ==================== VENDA ====================
