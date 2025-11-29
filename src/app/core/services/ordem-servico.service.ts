@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { OrdemServico, OrdemServicoRequest, StatusOrdemServico } from '../models';
+import { OrdemServico, OrdemServicoRequest, Status, TipoOrdemOrcamento } from '../models';
 
 @Injectable({
   providedIn: 'root'
@@ -31,7 +31,7 @@ export class OrdemServicoService {
   /**
    * Listar ordens por status
    */
-  listarPorStatus(status: StatusOrdemServico): Observable<OrdemServico[]> {
+  listarPorStatus(status: Status): Observable<OrdemServico[]> {
     return this.http.get<OrdemServico[]>(`${this.apiUrl}/status/${status}`);
   }
   

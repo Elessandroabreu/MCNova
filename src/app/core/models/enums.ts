@@ -19,14 +19,14 @@ export enum FormaPagamento {
 }
 
 // ✅ CORRIGIDO: Status usado tanto em Agendamento quanto em OrdemServico
-export enum StatusAgendamento {
+export enum Status {
   AGENDADO = 'AGENDADO',
   EM_ANDAMENTO = 'EM_ANDAMENTO',
   CONCLUIDO = 'CONCLUIDO',
   CANCELADO = 'CANCELADO'
 }
 
-export enum TipoServico {
+export enum TipoOrdemOrcamento {
   ORCAMENTO = 'ORCAMENTO',
   ORDEM_DE_SERVICO = 'ORDEM_DE_SERVICO'
 }

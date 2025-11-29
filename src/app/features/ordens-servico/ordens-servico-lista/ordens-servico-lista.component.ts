@@ -8,7 +8,7 @@ import { VeiculoService } from '../../../core/services/veiculo.service';
 import { ProdutoService } from '../../../core/services/produto.service';
 import { ServicoService } from '../../../core/services/servico.service';
 import { UsuarioService } from '../../../core/services/usuario.service';
-import { OrdemServico, OrdemServicoRequest, ItemOrdemServicoRequest, Cliente, Veiculo, Produto, Servico, Usuario, StatusOrdemServico, TipoServico, FormaPagamento } from '../../../core/models';
+import { OrdemServico, OrdemServicoRequest, ItemOrdemServicoRequest, Cliente, Veiculo, Produto, Servico, Usuario, Status, TipoOrdemOrcamento, FormaPagamento } from '../../../core/models';
 
 declare var bootstrap: any;
 
@@ -74,26 +74,26 @@ export class OrdensServicoListaComponent implements OnInit {
   ordemParaConcluir = signal<OrdemServico | null>(null);
   
   dropdownAbertoId = signal<number | null>(null);
-  filtroStatus = signal<StatusOrdemServico | 'TODOS'>('TODOS');
+  filtroStatus = signal<Status | 'TODOS'>('TODOS');
   
   statusOptions = [
     { value: 'TODOS' as const, label: 'Todos', class: 'secondary' },
-    { value: StatusOrdemServico.AGUARDANDO, label: 'Aguardando', class: 'warning' },
-    { value: StatusOrdemServico.EM_ANDAMENTO, label: 'Em Andamento', class: 'primary' },
-    { value: StatusOrdemServico.CONCLUIDA, label: 'Concluída', class: 'success' },
-    { value: StatusOrdemServico.CANCELADA, label: 'Cancelada', class: 'danger' }
+    { value: Status.AGENDADO, label: 'Aguardando', class: 'warning' },
+    { value: Status.EM_ANDAMENTO, label: 'Em Andamento', class: 'primary' },
+    { value: Status.CONCLUIDO, label: 'Concluída', class: 'success' },
+    { value: Status.CANCELADO, label: 'Cancelada', class: 'danger' }
   ];
   
   statusDropdownOptions = [
-    { value: StatusOrdemServico.AGUARDANDO, label: 'Aguardando', class: 'warning', icon: 'clock' },
-    { value: StatusOrdemServico.EM_ANDAMENTO, label: 'Em Andamento', class: 'primary', icon: 'play-circle' },
-    { value: StatusOrdemServico.CONCLUIDA, label: 'Concluída', class: 'success', icon: 'check-circle' },
-    { value: StatusOrdemServico.CANCELADA, label: 'Cancelada', class: 'danger', icon: 'x-circle' }
+    { value: Status.AGENDADO, label: 'Aguardando', class: 'warning', icon: 'clock' },
+    { value: Status.EM_ANDAMENTO, label: 'Em Andamento', class: 'primary', icon: 'play-circle' },
+    { value: Status.CONCLUIDO, label: 'Concluída', class: 'success', icon: 'check-circle' },
+    { value: Status.CANCELADO, label: 'Cancelada', class: 'danger', icon: 'x-circle' }
   ];
   
   tiposServico = [
-    { value: TipoServico.ORCAMENTO, label: 'Orçamento' },
-    { value: TipoServico.ORDEM_DE_SERVICO, label: 'Ordem de Serviço' }
+    { value: TipoOrdemOrcamento.ORCAMENTO, label: 'Orçamento' },
+    { value: TipoOrdemOrcamento .ORDEM_DE_SERVICO, label: 'Ordem de Serviço' }
   ];
   
   formasPagamento = [
@@ -137,9 +137,8 @@ export class OrdensServicoListaComponent implements OnInit {
       cdCliente: ['', [Validators.required]],
       cdVeiculo: ['', [Validators.required]],
       cdMecanico: ['', [Validators.required]],
-      tipoServico: [TipoServico.ORDEM_DE_SERVICO, [Validators.required]],
+      TipoOrdemOrcamento: [TipoOrdemOrcamento.ORDEM_DE_SERVICO, [Validators.required]],
       dataAgendamento: [''],
-      observacoes: [''],
       diagnostico: ['']
     });
     
@@ -148,7 +147,6 @@ export class OrdensServicoListaComponent implements OnInit {
     });
     
     this.editarForm = this.fb.group({
-      observacoes: [''],
       diagnostico: ['']
     });
     
@@ -165,9 +163,9 @@ export class OrdensServicoListaComponent implements OnInit {
       }
     });
     
-    this.ordemForm.get('tipoServico')?.valueChanges.subscribe(tipo => {
+    this.ordemForm.get('TipoOrdemOrcamento')?.valueChanges.subscribe(tipo => {
       const dataControl = this.ordemForm.get('dataAgendamento');
-      if (tipo === TipoServico.ORDEM_DE_SERVICO) {
+      if (tipo === TipoOrdemOrcamento.ORDEM_DE_SERVICO) {
         dataControl?.setValidators([Validators.required]);
       } else {
         dataControl?.clearValidators();
@@ -193,10 +191,10 @@ export class OrdensServicoListaComponent implements OnInit {
     return new Promise((resolve) => {
       // ✅ CORRIGIDO: Buscar TODAS as ordens (incluindo concluídas e canceladas)
       Promise.all([
-        this.ordemServicoService.listarPorStatus(StatusOrdemServico.AGUARDANDO).toPromise(),
-        this.ordemServicoService.listarPorStatus(StatusOrdemServico.EM_ANDAMENTO).toPromise(),
-        this.ordemServicoService.listarPorStatus(StatusOrdemServico.CONCLUIDA).toPromise(),
-        this.ordemServicoService.listarPorStatus(StatusOrdemServico.CANCELADA).toPromise(),
+        this.ordemServicoService.listarPorStatus(Status.AGENDADO).toPromise(),
+        this.ordemServicoService.listarPorStatus(Status.EM_ANDAMENTO).toPromise(),
+        this.ordemServicoService.listarPorStatus(Status.CONCLUIDO).toPromise(),
+        this.ordemServicoService.listarPorStatus(Status.CANCELADO).toPromise(),
         this.ordemServicoService.listarOrcamentosPendentes().toPromise()
       ]).then(([aguardando, emAndamento, concluidas, canceladas, orcamentos]) => {
         const todasOrdens = [
@@ -275,12 +273,12 @@ export class OrdensServicoListaComponent implements OnInit {
   aplicarFiltro(): void {
     let filtradas = this.ordens();
     if (this.filtroStatus() !== 'TODOS') {
-      filtradas = filtradas.filter(o => o.statusOrdemServico === this.filtroStatus());
+      filtradas = filtradas.filter(o => o.status === this.filtroStatus());
     }
     this.ordensFiltradas.set(filtradas);
   }
   
-  alterarFiltroStatus(status: StatusOrdemServico | 'TODOS'): void {
+  alterarFiltroStatus(status: Status | 'TODOS'): void {
     this.filtroStatus.set(status);
     this.aplicarFiltro();
   }
@@ -315,29 +313,29 @@ export class OrdensServicoListaComponent implements OnInit {
   }
   
   // ✅ CORRIGIDO: Mudar status com validações corretas
-  mudarStatus(ordem: OrdemServico, novoStatus: StatusOrdemServico, event: Event): void {
+  mudarStatus(ordem: OrdemServico, novoStatus: Status, event: Event): void {
     event.stopPropagation();
     this.dropdownAbertoId.set(null);
     
-    if (ordem.statusOrdemServico === novoStatus) {
+    if (ordem.status === novoStatus) {
       return;
     }
     
     // Se mudou para CONCLUIDA, abre modal de pagamento
-    if (novoStatus === StatusOrdemServico.CONCLUIDA) {
+    if (novoStatus === Status.CONCLUIDO) {
       this.abrirModalConcluir(ordem);
       return;
     }
     
     // Se mudou para EM_ANDAMENTO, chama método específico
-    if (novoStatus === StatusOrdemServico.EM_ANDAMENTO && 
-        ordem.statusOrdemServico === StatusOrdemServico.AGUARDANDO) {
+    if (novoStatus === Status.AGENDADO && 
+        ordem.status === Status.EM_ANDAMENTO) {
       this.iniciarOrdem(ordem);
       return;
     }
     
     // Se mudou para CANCELADA
-    if (novoStatus === StatusOrdemServico.CANCELADA) {
+    if (novoStatus === Status.CANCELADO) {
       this.cancelarOrdem(ordem);
       return;
     }
@@ -421,7 +419,7 @@ export class OrdensServicoListaComponent implements OnInit {
   
   abrirModalNovo(): void {
     this.ordemForm.reset({
-      tipoServico: TipoServico.ORDEM_DE_SERVICO
+      TipoOrdemOrcamento: TipoOrdemOrcamento.ORDEM_DE_SERVICO
     });
     const hoje = new Date().toISOString().split('T')[0];
     this.ordemForm.patchValue({
@@ -474,8 +472,8 @@ export class OrdensServicoListaComponent implements OnInit {
         codigo: produto.cdProduto,
         nome: produto.nmProduto,
         quantidade: quantidade,
-        vlUnitario: produto.vlVenda,
-        vlTotal: quantidade * produto.vlVenda
+        vlUnitario: produto.vlProduto,
+        vlTotal: quantidade * produto.vlProduto
       };
       this.itens.set([...this.itens(), novoItem]);
     }
@@ -546,9 +544,8 @@ export class OrdensServicoListaComponent implements OnInit {
       cdCliente: formValue.cdCliente,
       cdVeiculo: formValue.cdVeiculo,
       cdMecanico: formValue.cdMecanico,
-      tipoServico: formValue.tipoServico,
+      tipoOrdemOrcamento: formValue.TipoOrdemOrcamento,
       dataAgendamento: formValue.dataAgendamento || undefined,
-      observacoes: formValue.observacoes || undefined,
       diagnostico: formValue.diagnostico || undefined,
       itens: itensRequest
     };
@@ -612,8 +609,7 @@ export class OrdensServicoListaComponent implements OnInit {
   abrirModalEditar(ordem: OrdemServico): void {
     this.ordemParaEditar.set(ordem);
     this.editarForm.patchValue({
-      observacoes: ordem.observacoes || '',
-      diagnostico: ordem.diagnostico || ''
+    diagnostico: ordem.diagnostico || ''
     });
     this.editarModalInstance?.show();
   }
@@ -629,8 +625,7 @@ export class OrdensServicoListaComponent implements OnInit {
       cdCliente: ordem.cdCliente!,
       cdVeiculo: ordem.cdVeiculo!,
       cdMecanico: ordem.cdMecanico!,
-      tipoServico: ordem.tipoServico,
-      observacoes: formValue.observacoes || undefined,
+      tipoOrdemOrcamento: ordem.tipoOrdemOrcamento,
       diagnostico: formValue.diagnostico || undefined,
       itens: []
     };
@@ -659,17 +654,17 @@ export class OrdensServicoListaComponent implements OnInit {
     }).format(valor);
   }
   
-  getStatusLabel(status: StatusOrdemServico): string {
+  getStatusLabel(status: Status): string {
     const statusObj = this.statusOptions.find(s => s.value === status);
     return statusObj?.label || status;
   }
   
-  getStatusClass(status: StatusOrdemServico): string {
+  getStatusClass(status: Status): string {
     const statusObj = this.statusOptions.find(s => s.value === status);
     return `bg-${statusObj?.class || 'secondary'}`;
   }
   
-  getTipoLabel(tipo: TipoServico): string {
+  getTipoLabel(tipo: TipoOrdemOrcamento): string {
     const tipoObj = this.tiposServico.find(t => t.value === tipo);
     return tipoObj?.label || tipo;
   }
@@ -695,9 +690,9 @@ export class OrdensServicoListaComponent implements OnInit {
   }
   
   getVeiculoInfo(ordem: OrdemServico): string {
-    if (ordem.placa && ordem.modeloVeiculo) {
-      return `${ordem.placa} - ${ordem.modeloVeiculo}`;
-    } else if (ordem.placa) {
+    if (ordem.placaVeiculo && ordem.modeloVeiculo) {
+      return `${ordem.placaVeiculo} - ${ordem.modeloVeiculo}`;
+    } else if (ordem.placaVeiculo) {
       return ordem.placa;
     } else if (ordem.modeloVeiculo) {
       return ordem.modeloVeiculo;

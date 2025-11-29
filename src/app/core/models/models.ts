@@ -12,20 +12,20 @@ export interface Usuario {
   email: string;
   provider: AuthProvider;
   roles: UserRole[];
-  nuTelefone?: string;
-  nuCPF?: string;
+  telefone?: string;
+  cpf?: string;
   ativo: boolean;
 }
 
 export interface UsuarioRequest {
   nmUsuario: string;
   email: string;
-  password?: string;
+  senha?: string;
   provider?: AuthProvider;
   authProvider?: AuthProvider; // Alias para compatibilidade
   roles: UserRole[];
-  nuTelefone?: string;
-  nuCPF?: string;
+  telefone?: string;
+  cpf?: string;
   providerId?: string;
   ativo?: boolean;
 }
@@ -33,7 +33,7 @@ export interface UsuarioRequest {
 // ==================== AUTH ====================
 export interface LoginRequest {
   email: string;
-  password: string;
+  senha: string;
 }
 
 export interface AuthResponse {
@@ -46,17 +46,17 @@ export interface AuthResponse {
 export interface Cliente {
   cdCliente: number;
   nmCliente: string;
-  nuCPF?: string;
-  nuTelefone?: string;
-  dsEndereco?: string;
+  cpf?: string;
+  telefone?: string;
+  endereco?: string;
   email?: string;
   ativo: boolean;
 }
 
 export interface ClienteRequest {
   nmCliente: string;
-  nuCPF?: string;
-  nuTelefone?: string;
+  cpf?: string;
+  telefone?: string;
   dsEndereco?: string;
   email?: string;
 }

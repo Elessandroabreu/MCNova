@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Agendamento, AgendamentoRequest, StatusAgendamento } from '../models';
+import { Agendamento, AgendamentoRequest, Status } from '../models';
 
 @Injectable({
   providedIn: 'root'
@@ -38,7 +38,7 @@ export class AgendamentoService {
   }
 
   // ✅ ATUALIZAR STATUS (sincroniza com OS automaticamente no backend)
-  atualizarStatus(id: number, status: StatusAgendamento): Observable<Agendamento> {
+  atualizarStatus(id: number, status: Status): Observable<Agendamento> {
     return this.http.patch<Agendamento>(`${this.apiUrl}/${id}/status`, { status });
   }
 

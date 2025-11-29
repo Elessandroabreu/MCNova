@@ -3,7 +3,7 @@
 // VERSÃO CORRIGIDA - Compatível com o Backend
 // ========================================
 
-import { FormaPagamento, StatusAgendamento, TipoServico } from './enums';
+import { FormaPagamento, Status, TipoOrdemOrcamento } from './enums';
 
 // ==================== AGENDAMENTO ====================
 export interface Agendamento {
@@ -27,7 +27,7 @@ export interface Agendamento {
   
   // Agendamento
   dataAgendamento: string;
-  status: StatusAgendamento;
+  status: Status;
   observacoes?: string;
   
   // Ordem de Serviço vinculada
@@ -85,7 +85,7 @@ export interface OrdemServico {
   
   // Cliente
   cdCliente: number;
-  nomeCliente: string;
+  nmCliente: string;
   
   // Veículo
   cdVeiculo: number;
@@ -95,11 +95,11 @@ export interface OrdemServico {
   
   // Mecânico
   cdMecanico: number;
-  nomeMecanico: string;
+  nmMecanico: string;
   
   // Dados da OS
-  tipoServico: TipoServico;
-  status: StatusAgendamento;
+  tipoOrdemOrcamento: TipoOrdemOrcamento;
+  status: Status;
   dataAgendamento: string;
   dataAbertura: string;
   
@@ -119,7 +119,7 @@ export interface OrdemServicoRequest {
   cdCliente: number;
   cdVeiculo: number;
   cdMecanico: number;
-  tipoServico: TipoServico;
+  tipoOrdemOrcamento: TipoOrdemOrcamento;
   dataAgendamento?: string;
   vlMaoObra?: number;
   diagnostico?: string;

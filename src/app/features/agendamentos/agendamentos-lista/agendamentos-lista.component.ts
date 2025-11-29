@@ -5,7 +5,7 @@ import { AgendamentoService } from '../../../core/services/agendamento.service';
 import { ClienteService } from '../../../core/services/cliente.service';
 import { VeiculoService } from '../../../core/services/veiculo.service';
 import { UsuarioService } from '../../../core/services/usuario.service';
-import { Agendamento, AgendamentoRequest, Cliente, Veiculo, Usuario, StatusAgendamento } from '../../../core/models';
+import { Agendamento, AgendamentoRequest, Cliente, Veiculo, Usuario, Status } from '../../../core/models';
 import { formatarDataSimples } from '../../../core/utils/formatters.util';
 
 declare var bootstrap: any;
@@ -42,22 +42,22 @@ export class AgendamentosListaComponent implements OnInit {
   agendamentoEditando = signal<Agendamento | null>(null);
   
   searchTerm = '';
-  filtroStatus = signal<StatusAgendamento | 'TODOS'>('TODOS');
+  filtroStatus = signal<Status | 'TODOS'>('TODOS');
   dropdownAbertoId = signal<number | null>(null);
   
   statusOptions = [
     { value: 'TODOS' as const, label: 'Todos', class: 'secondary' },
-    { value: StatusAgendamento.AGENDADO, label: 'Agendado', class: 'primary' },
-    { value: StatusAgendamento.EM_ANDAMENTO, label: 'Em Andamento', class: 'warning' },
-    { value: StatusAgendamento.CONCLUIDO, label: 'Concluído', class: 'success' },
-    { value: StatusAgendamento.CANCELADO, label: 'Cancelado', class: 'danger' }
+    { value: Status.AGENDADO, label: 'Agendado', class: 'primary' },
+    { value: Status.EM_ANDAMENTO, label: 'Em Andamento', class: 'warning' },
+    { value: Status.CONCLUIDO, label: 'Concluído', class: 'success' },
+    { value: Status.CANCELADO, label: 'Cancelado', class: 'danger' }
   ];
   
   statusDropdownOptions = [
-    { value: StatusAgendamento.AGENDADO, label: 'Agendado', class: 'primary', icon: 'calendar-check' },
-    { value: StatusAgendamento.EM_ANDAMENTO, label: 'Em Andamento', class: 'warning', icon: 'play-circle' },
-    { value: StatusAgendamento.CONCLUIDO, label: 'Concluído', class: 'success', icon: 'check-circle' },
-    { value: StatusAgendamento.CANCELADO, label: 'Cancelado', class: 'danger', icon: 'x-circle' }
+    { value: Status.AGENDADO, label: 'Agendado', class: 'primary', icon: 'calendar-check' },
+    { value: Status.EM_ANDAMENTO, label: 'Em Andamento', class: 'warning', icon: 'play-circle' },
+    { value: Status.CONCLUIDO, label: 'Concluído', class: 'success', icon: 'check-circle' },
+    { value: Status.CANCELADO, label: 'Cancelado', class: 'danger', icon: 'x-circle' }
   ];
   
   ngOnInit(): void {
@@ -199,7 +199,7 @@ export class AgendamentosListaComponent implements OnInit {
     this.agendamentosFiltrados.set(filtrados);
   }
   
-  alterarFiltroStatus(status: StatusAgendamento | 'TODOS'): void {
+  alterarFiltroStatus(status: Status | 'TODOS'): void {
     this.filtroStatus.set(status);
     this.aplicarFiltro();
   }
@@ -230,7 +230,7 @@ export class AgendamentosListaComponent implements OnInit {
     return this.dropdownAbertoId() === agendamentoId;
   }
   
-  mudarStatus(agendamento: Agendamento, novoStatus: StatusAgendamento, event: Event): void {
+  mudarStatus(agendamento: Agendamento, novoStatus: Status, event: Event): void {
     event.stopPropagation();
     this.dropdownAbertoId.set(null);
     
@@ -238,11 +238,11 @@ export class AgendamentosListaComponent implements OnInit {
       return;
     }
     
-    const mensagens: Record<StatusAgendamento, string> = {
-      [StatusAgendamento.AGENDADO]: 'Deseja voltar este agendamento para AGENDADO?',
-      [StatusAgendamento.EM_ANDAMENTO]: 'Deseja iniciar este agendamento? A Ordem de Serviço será atualizada automaticamente.',
-      [StatusAgendamento.CONCLUIDO]: 'Deseja concluir este agendamento? A Ordem de Serviço será atualizada automaticamente.',
-      [StatusAgendamento.CANCELADO]: 'Deseja cancelar este agendamento? A Ordem de Serviço será atualizada automaticamente.'
+    const mensagens: Record<Status, string> = {
+      [Status.AGENDADO]: 'Deseja voltar este agendamento para AGENDADO?',
+      [Status.EM_ANDAMENTO]: 'Deseja iniciar este agendamento? A Ordem de Serviço será atualizada automaticamente.',
+      [Status.CONCLUIDO]: 'Deseja concluir este agendamento? A Ordem de Serviço será atualizada automaticamente.',
+      [Status.CANCELADO]: 'Deseja cancelar este agendamento? A Ordem de Serviço será atualizada automaticamente.'
     };
     
     if (!confirm(mensagens[novoStatus])) {
@@ -355,12 +355,12 @@ export class AgendamentosListaComponent implements OnInit {
     }
   }
   
-  getStatusLabel(status: StatusAgendamento): string {
+  getStatusLabel(status: Status): string {
     const statusObj = this.statusOptions.find(s => s.value === status);
     return statusObj?.label || status;
   }
   
-  getStatusClass(status: StatusAgendamento): string {
+  getStatusClass(status: Status): string {
     const statusObj = this.statusOptions.find(s => s.value === status);
     return `bg-${statusObj?.class || 'secondary'}`;
   }
