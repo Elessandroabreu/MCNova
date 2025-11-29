@@ -31,7 +31,7 @@ export class VendasListaComponent implements OnInit, AfterViewInit {
   private authService = inject(AuthService);
   private fb = inject(FormBuilder);
 
-  // ViewChilds vinculados aos ids do template (#vendaModal e #detalhesModal)
+ 
   @ViewChild('vendaModal', { static: false }) vendaModalElement!: ElementRef;
   @ViewChild('detalhesModal', { static: false }) detalhesModalElement!: ElementRef;
 
@@ -60,7 +60,6 @@ export class VendasListaComponent implements OnInit, AfterViewInit {
     { value: FormaPagamento.PIX, label: 'PIX' }
   ];
 
-  // venda selecionada para exibir no modal de detalhes
   vendaSelecionada = signal<Venda | null>(null);
 
   ngOnInit(): void {
@@ -69,7 +68,7 @@ export class VendasListaComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    // inicializa instâncias bootstrap dos modais (se existirem)
+    
     try {
       if (this.vendaModalElement?.nativeElement) {
         this.vendaModalInstance = new bootstrap.Modal(this.vendaModalElement.nativeElement);
@@ -226,7 +225,7 @@ export class VendasListaComponent implements OnInit, AfterViewInit {
       this.itensVenda.set([...this.itensVenda(), novoItem]);
     }
 
-    // Reset campos de seleção
+   
     this.produtoSelecionado.set(null);
     this.quantidadeProduto.set(1);
   }
@@ -239,8 +238,7 @@ export class VendasListaComponent implements OnInit, AfterViewInit {
     return this.itensVenda().reduce((total, item) => total + item.vlTotal, 0);
   }
 
-  // <<< ADICIONEI ESTE MÉTODO AQUI >>> 
-  // Usa Number(...) e ?? 0 para evitar valores inválidos e garante que seja executado no TS (sem arrow fn no template).
+  
   calcularTotalVendas(): number {
     try {
       return this.vendasFiltradas().reduce((acc, v) => acc + Number(v.vlTotal ?? 0), 0);
@@ -249,7 +247,6 @@ export class VendasListaComponent implements OnInit, AfterViewInit {
       return 0;
     }
   }
-  // <<< FIM DO MÉTODO ADICIONADO >>>
 
   salvar(): void {
     if (this.vendaForm.invalid) {
@@ -298,8 +295,6 @@ export class VendasListaComponent implements OnInit, AfterViewInit {
       }
     });
   }
-
-  // ========== FORMATADORES ==========
 
   formatarMoeda(valor: number): string {
     if (valor === null || valor === undefined) return 'R$ 0,00';
@@ -362,8 +357,6 @@ export class VendasListaComponent implements OnInit, AfterViewInit {
     return 0;
   }
 
-  // ========== DETALHES DO MODAL ==========
-
   abrirDetalhes(venda: Venda): void {
     this.vendaSelecionada.set(venda);
     this.detalhesModalInstance?.show();
@@ -388,44 +381,29 @@ export class VendasListaComponent implements OnInit, AfterViewInit {
     if (!venda) return;
 
     const conteudo = `
-=============================================
-             COMPROVANTE DE VENDA
-=============================================
 
 Venda Nº: ${venda.cdVenda}
 Data: ${this.formatarData(venda.dataVenda)}
 
----------------------------------------------
-CLIENTE
----------------------------------------------
+
 ${venda.clienteModel?.nmCliente || 'Venda Avulsa'}
 ${venda.clienteModel?.cpf ? 'CPF: ' + venda.clienteModel.cpf : ''}
 
----------------------------------------------
-PRODUTOS
----------------------------------------------
+
 ${(venda.itens?.map((item: any) => `
 ${this.getNomeProduto(item.cdProduto)}
 Qtd: ${item.quantidade} x ${this.formatarMoeda(item.vlUnitario || 0)}
 Subtotal: ${this.formatarMoeda(item.vlTotal || 0)}
 `).join('\n')) || 'Nenhum item'}
 
----------------------------------------------
-TOTAIS
----------------------------------------------
+
 Total: ${this.formatarMoeda(venda.vlTotal || 0)}
 ${(venda as any).desconto ? 'Desconto: ' + this.formatarMoeda((venda as any).desconto) : ''}
 
 Forma de Pagamento: ${this.getFormaPagamentoLabel(venda.formaPagamento)}
 
----------------------------------------------
-ATENDENTE
----------------------------------------------
 ${venda.atendente?.nmUsuario || '-'}
 
-=============================================
-      Obrigado pela preferência!
-=============================================
 `;
 
     const janelaImpressao = window.open('', '_blank');
@@ -441,7 +419,7 @@ ${venda.atendente?.nmUsuario || '-'}
     }
   }
 
-  // exportarRelatorio e filtrarPorPeriodo (mantidos)
+
   exportarRelatorio(): void {
     const vendas = this.vendasFiltradas();
 

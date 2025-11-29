@@ -1,9 +1,6 @@
-/* ========================================
-   SGM - SISTEMA DE GESTÃO MECÂNICA
-   Estilos Globais
-======================================== */
 
-/* ==================== VARIÁVEIS ==================== */
+
+
 :root {
   --primary-color: #0b3d91;
   --secondary-color: #ff7a00;
@@ -20,7 +17,7 @@
   --info: #17a2b8;
 }
 
-/* ==================== RESET & GLOBAL ==================== */
+
 * {
   margin: 0;
   padding: 0;
@@ -34,13 +31,13 @@ body {
   overflow-x: hidden;
 }
 
-/* ==================== TIPOGRAFIA ==================== */
+
 h1, h2, h3, h4, h5, h6 {
   font-weight: 500;
   color: var(--text-dark);
 }
 
-/* ==================== BOTÕES ==================== */
+
 .btn-primary {
   background-color: var(--primary-color);
   border-color: var(--primary-color);
@@ -61,7 +58,7 @@ h1, h2, h3, h4, h5, h6 {
   border-color: #e66d00;
 }
 
-/* ==================== CARDS ==================== */
+
 .card {
   border: none;
   border-radius: 8px;
@@ -76,7 +73,7 @@ h1, h2, h3, h4, h5, h6 {
   padding: 1rem 1.25rem;
 }
 
-/* ==================== TABELAS ==================== */
+
 .table {
   background-color: var(--white);
 }
@@ -94,14 +91,14 @@ h1, h2, h3, h4, h5, h6 {
   background-color: rgba(11, 61, 145, 0.05);
 }
 
-/* ==================== BADGES ==================== */
+
 .badge {
   padding: 0.5em 0.75em;
   font-weight: 500;
   font-size: 0.875rem;
 }
 
-/* ==================== FORMS ==================== */
+
 .form-label {
   font-weight: 500;
   color: var(--text-dark);
@@ -114,7 +111,7 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 0 0 0.2rem rgba(11, 61, 145, 0.25);
 }
 
-/* ==================== MODALS ==================== */
+
 .modal-header {
   background-color: var(--primary-color);
   color: var(--white);
@@ -124,13 +121,13 @@ h1, h2, h3, h4, h5, h6 {
   filter: brightness(0) invert(1);
 }
 
-/* ==================== ALERTAS ==================== */
+
 .alert {
   border-radius: 8px;
   border: none;
 }
 
-/* ==================== UTILITIES ==================== */
+
 .text-primary {
   color: var(--primary-color) !important;
 }
@@ -147,12 +144,12 @@ h1, h2, h3, h4, h5, h6 {
   background-color: var(--secondary-color) !important;
 }
 
-/* ==================== SPINNER/LOADING ==================== */
+
 .spinner-border-primary {
   color: var(--primary-color);
 }
 
-/* ==================== SCROLLBAR CUSTOMIZADA ==================== */
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
