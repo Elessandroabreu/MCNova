@@ -249,11 +249,11 @@ export class AgendamentosListaComponent implements OnInit {
       return;
     }
     
-    const mensagens: Record<Status, string> = {
+    const mensagens: Partial<Record<Status, string>> = {
       [Status.AGENDADO]: 'Deseja voltar este agendamento para AGENDADO?',
       [Status.EM_ANDAMENTO]: 'Deseja iniciar este agendamento? A Ordem de Serviço será atualizada automaticamente.',
       [Status.CONCLUIDO]: 'Deseja concluir este agendamento? A Ordem de Serviço será atualizada automaticamente.',
-      [Status.CANCELADO]: 'Deseja cancelar este agendamento? A Ordem de Serviço será atualizada automaticamente.'
+      [Status.CANCELADO]: 'Deseja cancelar este agendamento? A Ordem de Serviço será atualizada automaticamente.',
     };
     
     if (!confirm(mensagens[novoStatus])) {
